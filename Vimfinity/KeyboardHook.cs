@@ -12,9 +12,12 @@ internal class KeyboardHookManager
 
 	public static void RemoveHook()
 	{
-		UnhookWindowsHookEx(_HookHandle);
-		_HookHandle = IntPtr.Zero;
-		_Hook = null;
+		if (_HookHandle != IntPtr.Zero)
+		{
+			UnhookWindowsHookEx(_HookHandle);
+			_HookHandle = IntPtr.Zero;
+			_Hook = null;
+		}
 	}
 
 	public static void AddHook(Func<HookArgs, HookAction> hook)
