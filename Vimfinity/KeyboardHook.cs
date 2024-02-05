@@ -8,7 +8,7 @@ internal class KeyboardHookManager
 	private const int WH_KEYBOARD_LL = 13;
 
 	private static IntPtr _HookHandle = IntPtr.Zero;
-	private static Func<HookArgs, HookArgs>? _Hook = null;
+	private static Func<HookArgs, HookAction>? _Hook = null;
 
 	public static void RemoveHook()
 	{
@@ -17,7 +17,7 @@ internal class KeyboardHookManager
 		_Hook = null;
 	}
 
-	public static void AddHook(Func<HookArgs, HookArgs> hook)
+	public static void AddHook(Func<HookArgs, HookAction> hook)
 	{
 		if (_HookHandle == IntPtr.Zero)
 		{
@@ -49,16 +49,15 @@ internal class KeyboardHookManager
 			pressedState
 		);
 
-		args = _Hook?.Invoke(args) ?? args;
+		HookAction action = _Hook?.Invoke(args) ?? HookAction.ForwardKey;
 
-		if (args.Key == Keys.None || args.PressedState == KeyPressedState.None)
+		if (action == HookAction.ForwardKey)
 		{
-			return 1; // Swallow key
+			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
 		}
 		else
 		{
-			Marshal.WriteInt32(lParam, (int)args.Key);
-			return CallNextHookEx(_HookHandle, nCode, (IntPtr)args.PressedState, lParam);
+			return 1; // Swallow key
 		}
 	}
 
@@ -83,12 +82,8 @@ internal class KeyboardHookManager
 
 internal class HookArgs : EventArgs
 {
-	public static readonly HookArgs Swallow = new HookArgs();
-
-	public Keys Key { get; private set; } = Keys.None;
-	public KeyPressedState PressedState { get; private set; } = KeyPressedState.None;
-
-	public HookArgs() { }
+	public Keys Key { get; private set; }
+	public KeyPressedState PressedState { get; private set; }
 
 	public HookArgs(Keys key, KeyPressedState pressedState)
 	{
@@ -100,10 +95,6 @@ internal class HookArgs : EventArgs
 internal enum KeyPressedState
 {
 	/// <summary>
-	/// Undefined
-	/// </summary>
-	None = 0,
-	/// <summary>
 	/// WM_KEYDOWN
 	/// </summary>
 	Down = 0x0100,
@@ -111,4 +102,10 @@ internal enum KeyPressedState
 	/// WM_KEYUP
 	/// </summary>
 	Up = 0x0101
+}
+
+internal enum HookAction
+{
+	ForwardKey,
+	SwallowKey
 }
