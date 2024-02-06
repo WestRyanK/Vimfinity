@@ -30,6 +30,7 @@ public class VimKeyInterceptorTests
 			{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
 			{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 		};
+		interceptor.VimKey = Keys.OemSemicolon;
 
 		outputLog = log;
 		return interceptor;
@@ -138,23 +139,55 @@ public class VimKeyInterceptorTests
 	}
 
 	[Fact]
-	public void QuickReleaseVimKeyAfterVimBinding_Test()
+	public void QuickReleaseVimKeyAfterVimBindingDown_Test()
 	{
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(10));
+		// Releasing Vim-bound key
+		action = interceptor.VimIntercept(new(Keys.X, KeyPressedState.Up), new DateTime(10));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(110));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
 		// Pressing Vim-bound key before vim key min hold duration.
-		action = interceptor.VimIntercept(new(Keys.X, KeyPressedState.Down), new DateTime(20));
+		action = interceptor.VimIntercept(new(Keys.X, KeyPressedState.Down), new DateTime(120));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
 		Assert.Equal(interceptor.VimBindings[(KeyModifierFlags.None, Keys.X)], outputLog.Last());
 
-		// Releasing Vim-bound key before vim key min hold duration, but after a vim-bound key was pressed.
-		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(60));
+		// Releasing Vim key before vim key min hold duration, but after a vim-bound key was pressed.
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(160));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+	}
+
+	[Fact]
+	public void QuickReleaseVimKeyAfterVimBindingUp_Test()
+	{
+		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
+		HookAction action;
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(110));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Empty(outputLog);
+
+		// Pressing Vim-bound key before vim key min hold duration.
+		action = interceptor.VimIntercept(new(Keys.X, KeyPressedState.Down), new DateTime(120));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+		Assert.Equal(interceptor.VimBindings[(KeyModifierFlags.None, Keys.X)], outputLog.Last());
+
+		// Releasing Vim-bound key
+		action = interceptor.VimIntercept(new(Keys.X, KeyPressedState.Up), new DateTime(130));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Equal(1, outputLog.Count);
+
+		// Releasing Vim key before vim key min hold duration, but after a vim-bound key was pressed.
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(160));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
 	}
