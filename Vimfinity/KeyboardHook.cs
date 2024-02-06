@@ -47,8 +47,15 @@ internal class KeyboardHookManager
 			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
 		}
 
+		var keyboardStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam)!;
+
+		if (keyboardStruct.IsInjected)
+		{
+			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
+		}
+
 		HookArgs args = new(
-			(Keys)Marshal.ReadInt32(lParam),
+			keyboardStruct.Key,
 			pressedState
 		);
 
@@ -81,6 +88,34 @@ internal class KeyboardHookManager
 
 	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 	private static extern IntPtr GetModuleHandle(string lpModuleName);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public class KBDLLHOOKSTRUCT
+{
+    public uint vkCode;
+    public uint scanCode;
+    public uint flags;
+    public uint time;
+    public UIntPtr dwExtraInfo;
+
+	public Keys Key => (Keys)vkCode;
+	public bool IsExtended => (flags & (1 << 0)) != 0;
+	public bool IsLowIntegrityInjected => (flags & (1 << 1)) != 0;
+	public bool IsInjected => (flags & (1 << 4)) != 0;
+	public bool IsAltDown => (flags & (1 << 5)) != 0;
+	public bool IsReleasing => (flags & (1 << 7)) != 0;
+
+	public override string ToString()
+	{
+		return $"vkCode: {vkCode} " +
+			$"scanCode: {scanCode} " +
+			$"IsExtended: {IsExtended} " +
+			$"IsLowIntegrityInjected: {IsLowIntegrityInjected} " +
+			$"IsInjected: {IsInjected} " +
+			$"IsAltDown: {IsAltDown} " +
+			$"IsReleasing: {IsReleasing}";
+	}
 }
 
 internal class HookArgs : EventArgs
