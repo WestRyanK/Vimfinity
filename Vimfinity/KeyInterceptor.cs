@@ -30,12 +30,12 @@ internal class VimKeyInterceptor : KeyInterceptor
 		{ Keys.X, "{Backspace}" },
 	};
 
-	private KeysHistory _keysHistory = new();
+	private KeysState _keysState = new();
 
 	protected override HookAction Intercept(KeysArgs args)
 	{
-		TimeSpan? vimKeyDownDuration = _keysHistory.GetKeyDownDuration(VimKey);
-		_keysHistory.Record(args);
+		TimeSpan? vimKeyDownDuration = _keysState.GetKeyDownDuration(VimKey);
+		_keysState.Record(args);
 
 		if (vimKeyDownDuration >= VimKeyDownMinDuration)
 		{
@@ -61,19 +61,19 @@ internal class VimKeyInterceptor : KeyInterceptor
 	}
 }
 
-internal class KeysHistory
+internal class KeysState
 {
-	private Dictionary<Keys, DateTime> _keysToStartDownUtc = new();
+	private Dictionary<Keys, DateTime> _keysToDownStartUtc = new();
 
 	public void Record(KeysArgs args, DateTime nowUtc)
 	{
-		if (args.PressedState == KeyPressedState.Up && _keysToStartDownUtc.ContainsKey(args.Key))
+		if (args.PressedState == KeyPressedState.Up && _keysToDownStartUtc.ContainsKey(args.Key))
 		{
-			_keysToStartDownUtc.Remove(args.Key);
+			_keysToDownStartUtc.Remove(args.Key);
 		}
-		else if (args.PressedState == KeyPressedState.Down && !_keysToStartDownUtc.ContainsKey(args.Key))
+		else if (args.PressedState == KeyPressedState.Down && !_keysToDownStartUtc.ContainsKey(args.Key))
 		{
-			_keysToStartDownUtc[args.Key] = nowUtc;
+			_keysToDownStartUtc[args.Key] = nowUtc;
 		}
 	}
 
@@ -84,12 +84,12 @@ internal class KeysHistory
 
 	public TimeSpan? GetKeyDownDuration(Keys key, DateTime nowUtc)
 	{
-		if (!_keysToStartDownUtc.TryGetValue(key, out DateTime startDownUtc))
+		if (!_keysToDownStartUtc.TryGetValue(key, out DateTime downStartUtc))
 		{
 			return null;
 		}
 
-		return nowUtc - startDownUtc;
+		return nowUtc - downStartUtc;
 	}
 
 	public TimeSpan? GetKeyDownDuration(Keys key)
