@@ -50,7 +50,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 		_keysState.Record(args, nowUtc);
 		KeyModifierFlags modifiers = _keysState.GetKeyModifiersDown();
 
-		if (vimKeyDownDuration >= VimKeyDownMinDuration)
+		if (_keysState.IsKeyDown(VimKey))
 		{
 			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
