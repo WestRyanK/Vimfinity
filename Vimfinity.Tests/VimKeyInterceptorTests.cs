@@ -30,6 +30,7 @@ public class VimKeyInterceptorTests
 			{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
 			{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 		};
+		interceptor.VimKey = Keys.OemSemicolon;
 
 		outputLog = log;
 		return interceptor;

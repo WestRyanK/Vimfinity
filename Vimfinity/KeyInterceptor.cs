@@ -36,7 +36,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 		{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 	};
 
-	private KeysState _keysState = new();
+	private KeysRecord _keysRecord = new();
 	private bool _vimBindingPressed = false;
 
 	public VimKeyInterceptor(IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager) { }
@@ -48,11 +48,11 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	internal HookAction VimIntercept(KeysArgs args, DateTime nowUtc)
 	{
-		TimeSpan? vimKeyDownDuration = _keysState.GetKeyDownDuration(VimKey, nowUtc);
-		_keysState.Record(args, nowUtc);
-		KeyModifierFlags modifiers = _keysState.GetKeyModifiersDown();
+		TimeSpan? vimKeyDownDuration = _keysRecord.GetKeyDownDuration(VimKey, nowUtc);
+		_keysRecord.Record(args, nowUtc);
+		KeyModifierFlags modifiers = _keysRecord.GetKeyModifiersDown();
 
-		if (_keysState.IsKeyDown(VimKey))
+		if (_keysRecord.IsKeyDown(VimKey))
 		{
 			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
@@ -90,95 +90,5 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		output = default;
 		return false;
-	}
-}
-
-internal class KeysState
-{
-	private Dictionary<Keys, DateTime> _downStartTimesUtc = new();
-	private Dictionary<Keys, DateTime> _upTimesUtc = new();
-
-	public void Record(KeysArgs args, DateTime nowUtc)
-	{
-		if (args.PressedState == KeyPressedState.Up)
-		{
-			_upTimesUtc[args.Key] = nowUtc;
-
-			if (_downStartTimesUtc.ContainsKey(args.Key))
-			{
-				_downStartTimesUtc.Remove(args.Key);
-			}
-		}
-		else if (args.PressedState == KeyPressedState.Down && !_downStartTimesUtc.ContainsKey(args.Key))
-		{
-			_downStartTimesUtc[args.Key] = nowUtc;
-		}
-	}
-
-	public void Record(KeysArgs args)
-	{
-		Record(args, DateTime.UtcNow);
-	}
-
-	public TimeSpan? GetKeyDownDuration(Keys key, DateTime nowUtc)
-	{
-		if (GetKeyEvent(_downStartTimesUtc, key, true) is not DateTime downStartUtc)
-		{
-			return null;
-		}
-
-		return nowUtc - downStartUtc;
-	}
-
-	public TimeSpan? GetKeyDownDuration(Keys key)
-	{
-		return GetKeyDownDuration(key, DateTime.UtcNow);
-	}
-
-	public TimeSpan? GetKeyUpDuration(Keys key, DateTime nowUtc)
-	{
-		if (GetKeyEvent(_upTimesUtc, key, false) is not DateTime upTimeUtc)
-		{
-			return null;
-		}
-
-		return nowUtc - upTimeUtc;
-	}
-
-	public bool IsKeyDown(Keys key) => GetKeyEvent(_downStartTimesUtc, key, true) != null;
-
-	public KeyModifierFlags GetKeyModifiersDown()
-	{
-		KeyModifierFlags modifiers = KeyModifierFlags.None;
-		modifiers |= IsKeyDown(Keys.Control) ? KeyModifierFlags.Control : KeyModifierFlags.None;
-		modifiers |= IsKeyDown(Keys.Shift) ? KeyModifierFlags.Shift : KeyModifierFlags.None;
-		modifiers |= IsKeyDown(Keys.Alt) ? KeyModifierFlags.Alt : KeyModifierFlags.None;
-		return modifiers;
-	}
-
-	private DateTime? GetKeyEvent(Dictionary<Keys, DateTime> events, Keys key, bool useOldest)
-	{
-		DateTime? getEvent(IEnumerable<Keys> keys)
-		{
-			var selectedEvents = keys
-				.Select(k => events.TryGetValue(k, out DateTime eventTime) ? eventTime : (DateTime?)null)
-				.OfType<DateTime>()
-				.ToList();
-
-			if (selectedEvents.Any())
-			{
-				return useOldest ? selectedEvents.Min() : selectedEvents.Max();
-			}
-			return null;
-		}
-
-		return key switch
-		{
-			Keys.Modifiers => getEvent([Keys.LMenu, Keys.RMenu, Keys.LShiftKey, Keys.RShiftKey, Keys.LControlKey, Keys.RControlKey]),
-			Keys.Menu or Keys.Alt => getEvent([Keys.LMenu, Keys.RMenu]),
-			Keys.ShiftKey or Keys.Shift => getEvent([Keys.LShiftKey, Keys.RShiftKey]),
-			Keys.ControlKey or Keys.Control => getEvent([Keys.LControlKey, Keys.RControlKey]),
-			_ => getEvent([key]),
-		};
 	}
 }
