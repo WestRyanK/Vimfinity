@@ -95,17 +95,23 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 internal class KeysState
 {
-	private Dictionary<Keys, DateTime> _keysToDownStartUtc = new();
+	private Dictionary<Keys, DateTime> _downStartTimesUtc = new();
+	private Dictionary<Keys, DateTime> _upTimesUtc = new();
 
 	public void Record(KeysArgs args, DateTime nowUtc)
 	{
-		if (args.PressedState == KeyPressedState.Up && _keysToDownStartUtc.ContainsKey(args.Key))
+		if (args.PressedState == KeyPressedState.Up)
 		{
-			_keysToDownStartUtc.Remove(args.Key);
+			_upTimesUtc[args.Key] = nowUtc;
+
+			if (_downStartTimesUtc.ContainsKey(args.Key))
+			{
+				_downStartTimesUtc.Remove(args.Key);
+			}
 		}
-		else if (args.PressedState == KeyPressedState.Down && !_keysToDownStartUtc.ContainsKey(args.Key))
+		else if (args.PressedState == KeyPressedState.Down && !_downStartTimesUtc.ContainsKey(args.Key))
 		{
-			_keysToDownStartUtc[args.Key] = nowUtc;
+			_downStartTimesUtc[args.Key] = nowUtc;
 		}
 	}
 
@@ -116,7 +122,7 @@ internal class KeysState
 
 	public TimeSpan? GetKeyDownDuration(Keys key, DateTime nowUtc)
 	{
-		if (GetKeyDownStart(key) is not DateTime downStartUtc)
+		if (GetKeyEvent(_downStartTimesUtc, key, true) is not DateTime downStartUtc)
 		{
 			return null;
 		}
@@ -129,7 +135,17 @@ internal class KeysState
 		return GetKeyDownDuration(key, DateTime.UtcNow);
 	}
 
-	public bool IsKeyDown(Keys key) => GetKeyDownStart(key) != null;
+	public TimeSpan? GetKeyUpDuration(Keys key, DateTime nowUtc)
+	{
+		if (GetKeyEvent(_upTimesUtc, key, false) is not DateTime upTimeUtc)
+		{
+			return null;
+		}
+
+		return nowUtc - upTimeUtc;
+	}
+
+	public bool IsKeyDown(Keys key) => GetKeyEvent(_downStartTimesUtc, key, true) != null;
 
 	public KeyModifierFlags GetKeyModifiersDown()
 	{
@@ -140,25 +156,29 @@ internal class KeysState
 		return modifiers;
 	}
 
-	private DateTime? GetKeyDownStart(Keys key)
+	private DateTime? GetKeyEvent(Dictionary<Keys, DateTime> events, Keys key, bool useOldest)
 	{
-		DateTime? getOldestDownStart(IEnumerable<Keys> keys)
+		DateTime? getEvent(IEnumerable<Keys> keys)
 		{
-			var downStarts = keys
-				.Select(k => _keysToDownStartUtc.TryGetValue(k, out DateTime start) ? start : (DateTime?)null)
+			var selectedEvents = keys
+				.Select(k => events.TryGetValue(k, out DateTime eventTime) ? eventTime : (DateTime?)null)
 				.OfType<DateTime>()
 				.ToList();
 
-			return downStarts.Any() ? downStarts.Min() : null;
+			if (selectedEvents.Any())
+			{
+				return useOldest ? selectedEvents.Min() : selectedEvents.Max();
+			}
+			return null;
 		}
 
 		return key switch
 		{
-			Keys.Modifiers => getOldestDownStart([Keys.LMenu, Keys.RMenu, Keys.LShiftKey, Keys.RShiftKey, Keys.LControlKey, Keys.RControlKey]),
-			Keys.Menu or Keys.Alt => getOldestDownStart([Keys.LMenu, Keys.RMenu]),
-			Keys.ShiftKey or Keys.Shift => getOldestDownStart([Keys.LShiftKey, Keys.RShiftKey]),
-			Keys.ControlKey or Keys.Control => getOldestDownStart([Keys.LControlKey, Keys.RControlKey]),
-			_ => getOldestDownStart([key]),
+			Keys.Modifiers => getEvent([Keys.LMenu, Keys.RMenu, Keys.LShiftKey, Keys.RShiftKey, Keys.LControlKey, Keys.RControlKey]),
+			Keys.Menu or Keys.Alt => getEvent([Keys.LMenu, Keys.RMenu]),
+			Keys.ShiftKey or Keys.Shift => getEvent([Keys.LShiftKey, Keys.RShiftKey]),
+			Keys.ControlKey or Keys.Control => getEvent([Keys.LControlKey, Keys.RControlKey]),
+			_ => getEvent([key]),
 		};
 	}
 }
