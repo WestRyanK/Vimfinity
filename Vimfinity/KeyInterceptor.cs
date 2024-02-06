@@ -23,6 +23,7 @@ internal abstract class KeyInterceptor : IDisposable
 internal class VimKeyInterceptor : KeyInterceptor
 {
 	public TimeSpan VimKeyDownMinDuration { get; set; } = TimeSpan.FromSeconds(.2f);
+	public TimeSpan MaxTimeSinceModifierRecentlyReleased { get; set; } = TimeSpan.FromSeconds(.1f);
 
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
 	public Action<string>? OutputAction { get; set; } = SendKeys.Send;
@@ -66,12 +67,20 @@ internal class VimKeyInterceptor : KeyInterceptor
 			bool wasBindingPressed = timeSinceLastBindingEvent < vimKeyDownDuration;
 			if (!wasBindingPressed && args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
 			{
-				OutputAction?.Invoke(VimKey.ToSendKeysString());
+				IEnumerable<Keys> recentModifiers = GetRecentlyReleasedModifiers(MaxTimeSinceModifierRecentlyReleased, nowUtc);
+				string modifiersString = string.Join(null, recentModifiers.Select(k => k.ToSendKeysString()));
+				OutputAction?.Invoke($"{modifiersString}{VimKey.ToSendKeysString()}");
 			}
 			return HookAction.SwallowKey;
 		}
 
 		return HookAction.ForwardKey;
+	}
+
+	private IEnumerable<Keys> GetRecentlyReleasedModifiers(TimeSpan maxTimeSinceRelease, DateTime nowUtc)
+	{
+		return KeysExtensions.ModifierKeys
+			.Where(k => _keysRecord.GetKeyUpDuration(k, nowUtc) < maxTimeSinceRelease);
 	}
 
 	private TimeSpan? GetTimeSinceLastBindingEvent(DateTime nowUtc)

@@ -178,6 +178,31 @@ public class KeysRecordTest
 	}
 
 	[Fact]
+	public void RecordModifiersDownUp_Test()
+	{
+		KeysRecord state = new();
+
+		AssertKeysUp(state, excludedKeys: new HashSet<Keys>());
+		Assert.Equal(KeyModifierFlags.None, state.GetKeyModifiersDown());
+
+		state.Record(new(Keys.LShiftKey, KeyPressedState.Down), new DateTime(10));
+
+		AssertKeyDown(state, Keys.Modifiers, new DateTime(30), 20);
+		AssertKeyDown(state, Keys.LShiftKey, new DateTime(30), 20);
+		AssertKeyDown(state, Keys.ShiftKey, new DateTime(30), 20);
+		AssertKeyDown(state, Keys.Shift, new DateTime(30), 20);
+		AssertKeysUp(state, new HashSet<Keys> { Keys.LShiftKey, Keys.ShiftKey, Keys.Shift, Keys.Modifiers });
+		AssertKeysUpDuration(state, new DateTime(40));
+		Assert.Equal(KeyModifierFlags.Shift, state.GetKeyModifiersDown());
+
+		state.Record(new(Keys.LShiftKey, KeyPressedState.Up), new DateTime(20));
+
+		AssertKeysUp(state, excludedKeys: new HashSet<Keys>());
+		AssertKeysUpDuration(state, new DateTime(60), new Dictionary<Keys, long> { { Keys.LShiftKey, 40 }, { Keys.ShiftKey, 40 }, { Keys.Shift, 40 }, { Keys.Modifiers, 40 } });
+		Assert.Equal(KeyModifierFlags.None, state.GetKeyModifiersDown());
+	}
+
+	[Fact]
 	public void RecordUpWithoutDown_Test()
 	{
 		KeysRecord state = new();

@@ -41,6 +41,8 @@ internal enum KeyModifierFlags
 
 internal static class KeysExtensions
 {
+	public static readonly IEnumerable<Keys> ModifierKeys = [Keys.ShiftKey, Keys.ControlKey, Keys.Menu];
+
 	private static readonly HashSet<Keys> _EscapedNameKeys = [
 		Keys.CapsLock,
 		Keys.Delete,
@@ -66,6 +68,7 @@ internal static class KeysExtensions
 			return $"{{{key.ToString().ToUpper()}}}";
 		}
 
+		// https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.sendkeys.send?view=windowsdesktop-8.0&redirectedfrom=MSDN#System_Windows_Forms_SendKeys_Send_System_String_
 		return key switch
 		{
 			Keys.PageDown => "{PGDN}",
@@ -80,6 +83,9 @@ internal static class KeysExtensions
 			Keys.OemBackslash => "\\",
 			Keys.OemQuestion => "/",
 			Keys.OemMinus => "-",
+			Keys.ShiftKey or Keys.Shift => "+",
+			Keys.ControlKey or Keys.Control => "^",
+			Keys.Menu or Keys.Alt => "%",
 			_ => key.ToString(),
 		};
 	}

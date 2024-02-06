@@ -24,6 +24,7 @@ public class VimKeyInterceptorTests
 		List<string> log = new();
 		interceptor.OutputAction = log.Add;
 		interceptor.VimKeyDownMinDuration = TimeSpan.FromTicks(100);
+		interceptor.MaxTimeSinceModifierRecentlyReleased = TimeSpan.FromTicks(50);
 		interceptor.VimBindings = new Dictionary<(KeyModifierFlags, Keys), string>()
 		{
 			{ (KeyModifierFlags.Unspecified, Keys.J), "{Down}" },
@@ -287,4 +288,77 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 	}
+
+	[Fact]
+	public void ReleaseShiftBeforeVimKeyRelease_Test()
+	{
+		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
+		HookAction action;
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Down), new DateTime(10));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(20));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Up), new DateTime(30));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(40));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.VimKey.ToSendKeysString()}", outputLog.Last());
+	}
+
+	[Fact]
+	public void ReleaseShiftBeforeVimKeyDown_Test()
+	{
+		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
+		HookAction action;
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Down), new DateTime(10));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Up), new DateTime(20));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(30));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(40));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.VimKey.ToSendKeysString()}", outputLog.Last());
+	}
+
+	[Fact]
+	public void ReleaseShiftLongBeforeVimKeyRelease_Test()
+	{
+		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
+		HookAction action;
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Down), new DateTime(10));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Down), new DateTime(20));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(Keys.LShiftKey, KeyPressedState.Up), new DateTime(30));
+		Assert.Equal(HookAction.ForwardKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.VimIntercept(new(interceptor.VimKey, KeyPressedState.Up), new DateTime(100));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+		Assert.Equal(interceptor.VimKey.ToSendKeysString(), outputLog.Last());
+	}
+
 }
