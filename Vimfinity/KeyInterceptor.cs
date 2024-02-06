@@ -22,6 +22,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 {
 	public TimeSpan VimKeyDownMinDuration { get; set; } = TimeSpan.FromSeconds(.15f);
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
+	public Action<string>? OutputAction { get; set; } = SendKeys.Send;
 
 	private static readonly IDictionary<(KeyModifierFlags, Keys), string> _InputKeysToOutput = new Dictionary<(KeyModifierFlags, Keys), string>() {
 		{ (KeyModifierFlags.Unspecified, Keys.H), "{Left}" },
@@ -36,25 +37,29 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	protected override HookAction Intercept(KeysArgs args)
 	{
-		TimeSpan? vimKeyDownDuration = _keysState.GetKeyDownDuration(VimKey);
-		_keysState.Record(args);
+		return VimIntercept(args, DateTime.UtcNow);
+	}
+
+	internal HookAction VimIntercept(KeysArgs args, DateTime nowUtc)
+	{
+		TimeSpan? vimKeyDownDuration = _keysState.GetKeyDownDuration(VimKey, nowUtc);
+		_keysState.Record(args, nowUtc);
 		KeyModifierFlags modifiers = _keysState.GetKeyModifiersDown();
 
 		if (vimKeyDownDuration >= VimKeyDownMinDuration)
 		{
 			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
-				SendKeys.Send(output);
+				OutputAction?.Invoke(output);
 				return HookAction.SwallowKey;
 			}
 		}
 
 		if (args.Key == VimKey)
 		{
-			Debug.WriteLine($"Key {args.Key} State {args.PressedState} Duration {vimKeyDownDuration}");
 			if (args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
 			{
-				SendKeys.Send(VimKey.ToSendKeysString());
+				OutputAction?.Invoke(VimKey.ToSendKeysString());
 			}
 			return HookAction.SwallowKey;
 		}
