@@ -22,11 +22,6 @@ internal class KeysRecord
 		}
 	}
 
-	public void Record(KeysArgs args)
-	{
-		Record(args, DateTime.UtcNow);
-	}
-
 	public TimeSpan? GetKeyDownDuration(Keys key, DateTime nowUtc)
 	{
 		if (GetKeyRecord(_downStartTimesUtc, key, true) is not DateTime downStartUtc)
@@ -35,11 +30,6 @@ internal class KeysRecord
 		}
 
 		return nowUtc - downStartUtc;
-	}
-
-	public TimeSpan? GetKeyDownDuration(Keys key)
-	{
-		return GetKeyDownDuration(key, DateTime.UtcNow);
 	}
 
 	public TimeSpan? GetKeyUpDuration(Keys key, DateTime nowUtc)

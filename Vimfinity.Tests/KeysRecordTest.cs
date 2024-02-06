@@ -16,7 +16,7 @@ public class KeysRecordTest
 	{
 		foreach (var key in Enum.GetValues<Keys>().Where(k => !excludedKeys.Contains(k)))
 		{
-			Assert.Null(state.GetKeyDownDuration(key));
+			Assert.Null(state.GetKeyDownDuration(key, new DateTime(0)));
 			Assert.False(state.IsKeyDown(key));
 		}
 	}
@@ -175,5 +175,15 @@ public class KeysRecordTest
 		AssertKeyDown(state, Keys.Shift, new DateTime(30), 25);
 		AssertKeysUp(state, new HashSet<Keys> { Keys.LShiftKey, Keys.RShiftKey, Keys.ShiftKey, Keys.Shift, Keys.Modifiers });
 		Assert.Equal(KeyModifierFlags.Shift, state.GetKeyModifiersDown());
+	}
+
+	[Fact]
+	public void RecordUpWithoutDown_Test()
+	{
+		KeysRecord state = new();
+
+		state.Record(new(Keys.A, KeyPressedState.Up), new DateTime(10));
+
+		AssertKeysUpDuration(state, new DateTime(30), new Dictionary<Keys, long> { { Keys.A, 20 } });
 	}
 }

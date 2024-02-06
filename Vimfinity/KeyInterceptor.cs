@@ -37,7 +37,6 @@ internal class VimKeyInterceptor : KeyInterceptor
 	};
 
 	private KeysRecord _keysRecord = new();
-	private bool _vimBindingPressed = false;
 
 	public VimKeyInterceptor(IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager) { }
 
@@ -56,7 +55,6 @@ internal class VimKeyInterceptor : KeyInterceptor
 		{
 			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
-				_vimBindingPressed = true;
 				OutputAction?.Invoke(output);
 				return HookAction.SwallowKey;
 			}
@@ -64,15 +62,30 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		if (args.Key == VimKey)
 		{
-			if (!_vimBindingPressed && args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
+			TimeSpan? timeSinceLastBindingEvent = GetTimeSinceLastBindingEvent(nowUtc);
+			bool wasBindingPressed = timeSinceLastBindingEvent < vimKeyDownDuration;
+			if (!wasBindingPressed && args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
 			{
 				OutputAction?.Invoke(VimKey.ToSendKeysString());
 			}
-			_vimBindingPressed = false;
 			return HookAction.SwallowKey;
 		}
 
 		return HookAction.ForwardKey;
+	}
+
+	private TimeSpan? GetTimeSinceLastBindingEvent(DateTime nowUtc)
+	{
+		IEnumerable<TimeSpan?> upDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyUpDuration(k.Item2, nowUtc));
+		IEnumerable<TimeSpan?> downDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyDownDuration(k.Item2, nowUtc));
+
+		List<TimeSpan> durations =
+			upDurations
+			.Concat(downDurations)
+			.OfType<TimeSpan>()
+			.ToList();
+
+		return durations.Any() ? durations.Min() : null;
 	}
 
 	private bool TryGetOutputForInput(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out string? output)
