@@ -22,7 +22,8 @@ internal abstract class KeyInterceptor : IDisposable
 
 internal class VimKeyInterceptor : KeyInterceptor
 {
-	public TimeSpan VimKeyDownMinDuration { get; set; } = TimeSpan.FromSeconds(.15f);
+	public TimeSpan VimKeyDownMinDuration { get; set; } = TimeSpan.FromSeconds(.2f);
+
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
 	public Action<string>? OutputAction { get; set; } = SendKeys.Send;
 
@@ -36,6 +37,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 	};
 
 	private KeysState _keysState = new();
+	private bool _vimBindingPressed = false;
 
 	public VimKeyInterceptor(IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager) { }
 
@@ -54,6 +56,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 		{
 			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
+				_vimBindingPressed = true;
 				OutputAction?.Invoke(output);
 				return HookAction.SwallowKey;
 			}
@@ -61,10 +64,11 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		if (args.Key == VimKey)
 		{
-			if (args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
+			if (!_vimBindingPressed && args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
 			{
 				OutputAction?.Invoke(VimKey.ToSendKeysString());
 			}
+			_vimBindingPressed = false;
 			return HookAction.SwallowKey;
 		}
 
