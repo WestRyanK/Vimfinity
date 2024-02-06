@@ -26,7 +26,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
 	public Action<string>? OutputAction { get; set; } = SendKeys.Send;
 
-	private static readonly IDictionary<(KeyModifierFlags, Keys), string> _InputKeysToOutput = new Dictionary<(KeyModifierFlags, Keys), string>() {
+	public IDictionary<(KeyModifierFlags, Keys), string> VimBindings { get; set; } = new Dictionary<(KeyModifierFlags, Keys), string>() {
 		{ (KeyModifierFlags.Unspecified, Keys.H), "{Left}" },
 		{ (KeyModifierFlags.Unspecified, Keys.J), "{Down}" },
 		{ (KeyModifierFlags.Unspecified, Keys.K), "{Up}" },
@@ -73,12 +73,12 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	private bool TryGetOutputForInput(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out string? output)
 	{
-		if (_InputKeysToOutput.TryGetValue((modifiers, key), out string? o1))
+		if (VimBindings.TryGetValue((modifiers, key), out string? o1))
 		{
 			output = o1;
 			return true;
 		}
-		if (_InputKeysToOutput.TryGetValue((KeyModifierFlags.Unspecified, key), out string? o2))
+		if (VimBindings.TryGetValue((KeyModifierFlags.Unspecified, key), out string? o2))
 		{
 			output = o2;
 			return true;
