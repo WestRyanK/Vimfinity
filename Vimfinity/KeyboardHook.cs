@@ -8,7 +8,7 @@ internal class KeyboardHookManager
 	private const int WH_KEYBOARD_LL = 13;
 
 	private static IntPtr _HookHandle = IntPtr.Zero;
-	private static Func<HookArgs, HookAction>? _Hook = null;
+	private static Func<KeysArgs, HookAction>? _Hook = null;
 
 	public static void RemoveHook()
 	{
@@ -20,7 +20,7 @@ internal class KeyboardHookManager
 		}
 	}
 
-	public static void AddHook(Func<HookArgs, HookAction> hook)
+	public static void AddHook(Func<KeysArgs, HookAction> hook)
 	{
 		if (_HookHandle == IntPtr.Zero)
 		{
@@ -48,13 +48,15 @@ internal class KeyboardHookManager
 		}
 
 		var keyboardStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam)!;
+		Debug.WriteLine(keyboardStruct);
 
 		if (keyboardStruct.IsInjected)
+
 		{
 			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
 		}
 
-		HookArgs args = new(
+		KeysArgs args = new(
 			keyboardStruct.Key,
 			pressedState
 		);
@@ -108,42 +110,15 @@ public class KBDLLHOOKSTRUCT
 
 	public override string ToString()
 	{
-		return $"vkCode: {vkCode} " +
-			$"scanCode: {scanCode} " +
-			$"IsExtended: {IsExtended} " +
-			$"IsLowIntegrityInjected: {IsLowIntegrityInjected} " +
-			$"IsInjected: {IsInjected} " +
-			$"IsAltDown: {IsAltDown} " +
-			$"IsReleasing: {IsReleasing}";
+		return $"Key: {Key, -13}" +
+			$"vkCode: {vkCode, -3} " +
+			$"scanCode: {scanCode, -3} " +
+			$"IsExtended: {IsExtended, -5} " +
+			$"IsLowIntegrityInjected: {IsLowIntegrityInjected, -5} " +
+			$"IsInjected: {IsInjected, -5} " +
+			$"IsAltDown: {IsAltDown, -5} " +
+			$"IsReleasing: {IsReleasing, -5}";
 	}
-}
-
-internal class HookArgs : EventArgs
-{
-	public Keys Key { get; private set; }
-	public KeyPressedState PressedState { get; private set; }
-
-	public HookArgs(Keys key, KeyPressedState pressedState)
-	{
-		Key = key;
-		PressedState = pressedState;
-	}
-
-	public bool IsKeyDown(Keys key) => Key == key && PressedState == KeyPressedState.Down;
-
-	public bool IsKeyUp(Keys key) => Key == key && PressedState == KeyPressedState.Up;
-}
-
-internal enum KeyPressedState
-{
-	/// <summary>
-	/// WM_KEYDOWN
-	/// </summary>
-	Down = 0x0100,
-	/// <summary>
-	/// WM_KEYUP
-	/// </summary>
-	Up = 0x0101
 }
 
 internal enum HookAction
