@@ -30,6 +30,14 @@ internal enum KeyPressedState
 	Up = 0x0101
 }
 
+[Flags]
+internal enum KeyModifierFlags
+{
+	None = 0,
+	Control = 1 << 0,
+	Shift = 1 << 1,
+	Alt = 1 << 2,
+}
 
 internal static class KeysExtensions
 {

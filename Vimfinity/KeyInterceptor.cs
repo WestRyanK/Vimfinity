@@ -22,12 +22,13 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public TimeSpan VimKeyDownMinDuration { get; set; } = TimeSpan.FromSeconds(.15f);
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
 
-	private static readonly IDictionary<Keys, string> _InputKeysToOutput = new Dictionary<Keys, string>() {
-		{ Keys.H, "{Left}" },
-		{ Keys.J, "{Down}" },
-		{ Keys.K, "{Up}" },
-		{ Keys.L, "{Right}" },
-		{ Keys.X, "{Backspace}" },
+	private static readonly IDictionary<(KeyModifierFlags, Keys), string> _InputKeysToOutput = new Dictionary<(KeyModifierFlags, Keys), string>() {
+		{ (KeyModifierFlags.None, Keys.H), "{Left}" },
+		{ (KeyModifierFlags.None, Keys.J), "{Down}" },
+		{ (KeyModifierFlags.None, Keys.K), "{Up}" },
+		{ (KeyModifierFlags.None, Keys.L), "{Right}" },
+		{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
+		{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 	};
 
 	private KeysState _keysState = new();
@@ -36,11 +37,12 @@ internal class VimKeyInterceptor : KeyInterceptor
 	{
 		TimeSpan? vimKeyDownDuration = _keysState.GetKeyDownDuration(VimKey);
 		_keysState.Record(args);
+		KeyModifierFlags modifiers = _keysState.GetKeyModifiersDown();
 
 		if (vimKeyDownDuration >= VimKeyDownMinDuration)
 		{
 			if (args.PressedState == KeyPressedState.Down &&
-				_InputKeysToOutput.TryGetValue(args.Key, out var output))
+				_InputKeysToOutput.TryGetValue((modifiers, args.Key), out var output))
 			{
 				SendKeys.Send(output);
 				return HookAction.SwallowKey;
@@ -84,7 +86,7 @@ internal class KeysState
 
 	public TimeSpan? GetKeyDownDuration(Keys key, DateTime nowUtc)
 	{
-		if (!_keysToDownStartUtc.TryGetValue(key, out DateTime downStartUtc))
+		if (GetKeyDownStart(key) is not DateTime downStartUtc)
 		{
 			return null;
 		}
@@ -97,4 +99,36 @@ internal class KeysState
 		return GetKeyDownDuration(key, DateTime.UtcNow);
 	}
 
+	public bool IsKeyDown(Keys key) => GetKeyDownStart(key) != null;
+
+	public KeyModifierFlags GetKeyModifiersDown()
+	{
+		KeyModifierFlags modifiers = KeyModifierFlags.None;
+		modifiers |= IsKeyDown(Keys.Control) ? KeyModifierFlags.Control : KeyModifierFlags.None;
+		modifiers |= IsKeyDown(Keys.Shift) ? KeyModifierFlags.Shift : KeyModifierFlags.None;
+		modifiers |= IsKeyDown(Keys.Alt) ? KeyModifierFlags.Alt : KeyModifierFlags.None;
+		return modifiers;
+	}
+
+	private DateTime? GetKeyDownStart(Keys key)
+	{
+		DateTime? getOldestDownStart(IEnumerable<Keys> keys)
+		{
+			var downStarts = keys
+				.Select(k => _keysToDownStartUtc.TryGetValue(k, out DateTime start) ? start : (DateTime?)null)
+				.OfType<DateTime>()
+				.ToList();
+
+			return downStarts.Any() ? downStarts.Min() : null;
+		}
+
+		return key switch
+		{
+			Keys.Modifiers => getOldestDownStart([Keys.LMenu, Keys.RMenu, Keys.LShiftKey, Keys.RShiftKey, Keys.LControlKey, Keys.RControlKey]),
+			Keys.Alt => getOldestDownStart([Keys.LMenu, Keys.RMenu]),
+			Keys.ShiftKey or Keys.Shift => getOldestDownStart([Keys.LShiftKey, Keys.RShiftKey]),
+			Keys.ControlKey or Keys.Control => getOldestDownStart([Keys.LControlKey, Keys.RControlKey]),
+			_ => getOldestDownStart([key]),
+		};
+	}
 }
