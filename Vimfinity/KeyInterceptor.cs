@@ -147,7 +147,7 @@ internal class KeysState
 		return key switch
 		{
 			Keys.Modifiers => getOldestDownStart([Keys.LMenu, Keys.RMenu, Keys.LShiftKey, Keys.RShiftKey, Keys.LControlKey, Keys.RControlKey]),
-			Keys.Alt => getOldestDownStart([Keys.LMenu, Keys.RMenu]),
+			Keys.Menu or Keys.Alt => getOldestDownStart([Keys.LMenu, Keys.RMenu]),
 			Keys.ShiftKey or Keys.Shift => getOldestDownStart([Keys.LShiftKey, Keys.RShiftKey]),
 			Keys.ControlKey or Keys.Control => getOldestDownStart([Keys.LControlKey, Keys.RControlKey]),
 			_ => getOldestDownStart([key]),

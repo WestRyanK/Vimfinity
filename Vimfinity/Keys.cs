@@ -1,6 +1,5 @@
 ﻿namespace Vimfinity;
 
-
 internal class KeysArgs : EventArgs
 {
 	public Keys Key { get; private set; }
