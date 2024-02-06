@@ -18,7 +18,20 @@ having to take your hands off the home key row. Since Vimfinity is meant to be q
 small operations, Vim mode is activated/deactivated by holding/releasing a "Vim layer" key, 
 instead of pressing a key to enter a mode and then another key to exit the mode.
 
+## Setup
+
+1. Download a release from the [Releases](https://github.com/WestRyanK/Vimfinity/releases) tab.
+2. Extract the downloaded zip file to your computer.
+3. Click the extracted `Vimfinity.exe` to run the app.
+4. A notification icon will appear in the system tray while the app is running.
+5. Right-click the tray icon and click `Exit` to close the app.
+
+**Optional:** Add a shortcut to `Vimfinity.exe` to your `Startup` folder to start Vimfinity automatically.
+
+**Note:** There is currently no way to customize Vimfinity. You get what you pay for, and this app is free!
+
 ## How to Use
+
 Vimfinity has two modes of operation: Insert Mode and Vim Mode. The app starts in Insert Mode,
 passing through every keypress without modifying it. Holding down the "Vim Layer" key activates
 Vim Mode which rebinds your keys to Vim-like actions as long as the Vim Layer key is held.
