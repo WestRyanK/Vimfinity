@@ -37,6 +37,7 @@ internal enum KeyModifierFlags
 	Control = 1 << 0,
 	Shift = 1 << 1,
 	Alt = 1 << 2,
+	Unspecified = 1 << 3,
 }
 
 internal static class KeysExtensions

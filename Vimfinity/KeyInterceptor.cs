@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Vimfinity;
 
@@ -23,10 +24,10 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public Keys VimKey { get; set; } = Keys.OemSemicolon;
 
 	private static readonly IDictionary<(KeyModifierFlags, Keys), string> _InputKeysToOutput = new Dictionary<(KeyModifierFlags, Keys), string>() {
-		{ (KeyModifierFlags.None, Keys.H), "{Left}" },
-		{ (KeyModifierFlags.None, Keys.J), "{Down}" },
-		{ (KeyModifierFlags.None, Keys.K), "{Up}" },
-		{ (KeyModifierFlags.None, Keys.L), "{Right}" },
+		{ (KeyModifierFlags.Unspecified, Keys.H), "{Left}" },
+		{ (KeyModifierFlags.Unspecified, Keys.J), "{Down}" },
+		{ (KeyModifierFlags.Unspecified, Keys.K), "{Up}" },
+		{ (KeyModifierFlags.Unspecified, Keys.L), "{Right}" },
 		{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
 		{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 	};
@@ -41,8 +42,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		if (vimKeyDownDuration >= VimKeyDownMinDuration)
 		{
-			if (args.PressedState == KeyPressedState.Down &&
-				_InputKeysToOutput.TryGetValue((modifiers, args.Key), out var output))
+			if (args.PressedState == KeyPressedState.Down && TryGetOutputForInput(modifiers, args.Key, out string? output))
 			{
 				SendKeys.Send(output);
 				return HookAction.SwallowKey;
@@ -60,6 +60,23 @@ internal class VimKeyInterceptor : KeyInterceptor
 		}
 
 		return HookAction.ForwardKey;
+	}
+
+	private bool TryGetOutputForInput(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out string? output)
+	{
+		if (_InputKeysToOutput.TryGetValue((modifiers, key), out string? o1))
+		{
+			output = o1;
+			return true;
+		}
+		if (_InputKeysToOutput.TryGetValue((KeyModifierFlags.Unspecified, key), out string? o2))
+		{
+			output = o2;
+			return true;
+		}
+
+		output = default;
+		return false;
 	}
 }
 
