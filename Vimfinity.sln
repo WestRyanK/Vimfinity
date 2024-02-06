@@ -5,7 +5,13 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vimfinity", "Vimfinity\Vimfinity.csproj", "{BEB38033-7A9F-4CE0-B339-F0429BEC29FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vimfinity.Tests", "Vimfinity.Tests\Vimfinity.Tests.csproj", "{8A73C6F9-0556-4FFA-87FA-84F71041FA5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vimfinity.Tests", "Vimfinity.Tests\Vimfinity.Tests.csproj", "{8A73C6F9-0556-4FFA-87FA-84F71041FA5F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{640FA7D3-804C-4F67-AA39-6511086D75A7}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
