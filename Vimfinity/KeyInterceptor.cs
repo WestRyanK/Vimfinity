@@ -49,6 +49,11 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		if (args.Key == VimKey)
 		{
+			Debug.WriteLine($"Key {args.Key} State {args.PressedState} Duration {vimKeyDownDuration}");
+			if (args.PressedState == KeyPressedState.Up && vimKeyDownDuration < VimKeyDownMinDuration)
+			{
+				SendKeys.Send(VimKey.ToSendKeysString());
+			}
 			return HookAction.SwallowKey;
 		}
 
@@ -90,5 +95,51 @@ internal class KeysHistory
 	public TimeSpan? GetKeyDownDuration(Keys key)
 	{
 		return GetKeyDownDuration(key, DateTime.UtcNow);
+	}
+}
+
+internal static class KeysExtensions
+{
+	private static readonly HashSet<Keys> _EscapedNameKeys = [
+		Keys.CapsLock,
+		Keys.Delete,
+		Keys.End,
+		Keys.Enter,
+		Keys.Escape,
+		Keys.Help,
+		Keys.Home,
+		Keys.Insert,
+		Keys.NumLock,
+		Keys.Tab,
+		Keys.Add,
+		Keys.Subtract,
+		Keys.Multiply,
+		Keys.Divide,
+		.. Enumerable.Range((int)Keys.F1, (int)Keys.F24 - (int)Keys.F1 + 1).Select(k => (Keys)k)
+	];
+
+	public static string ToSendKeysString(this Keys key)
+	{
+		if (_EscapedNameKeys.Contains(key))
+		{
+			return $"{{{key.ToString().ToUpper()}}}";
+		}
+
+		return key switch
+		{
+			Keys.PageDown => "{PGDN}",
+			Keys.PageUp => "{PGUP}",
+			Keys.Back => "{BACKSPACE}",
+			Keys.Scroll => "{SCROLLLOCK}",
+			Keys.OemSemicolon => ";",
+			Keys.OemPeriod => ".",
+			Keys.Oemcomma => ",",
+			Keys.OemOpenBrackets => "[",
+			Keys.OemCloseBrackets => "]",
+			Keys.OemBackslash => "\\",
+			Keys.OemQuestion => "/",
+			Keys.OemMinus => "-",
+			_ => key.ToString(),
+		};
 	}
 }
