@@ -9,13 +9,6 @@ internal interface IKeyboardHookManager
 	public void RemoveHook();
 }
 
-internal class NullKeyboardHookManager : IKeyboardHookManager
-{
-	public void AddHook(Func<KeysArgs, HookAction> hook) { }
-
-	public void RemoveHook() { }
-}
-
 internal class Win32KeyboardHookManager : IKeyboardHookManager
 {
 	private const int WH_KEYBOARD_LL = 13;
