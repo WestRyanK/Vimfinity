@@ -3,14 +3,27 @@ using System.Runtime.InteropServices;
 
 namespace Vimfinity;
 
-internal class KeyboardHookManager
+internal interface IKeyboardHookManager
+{
+	public void AddHook(Func<KeysArgs, HookAction> hook);
+	public void RemoveHook();
+}
+
+internal class NullKeyboardHookManager : IKeyboardHookManager
+{
+	public void AddHook(Func<KeysArgs, HookAction> hook) { }
+
+	public void RemoveHook() { }
+}
+
+internal class Win32KeyboardHookManager : IKeyboardHookManager
 {
 	private const int WH_KEYBOARD_LL = 13;
 
-	private static IntPtr _HookHandle = IntPtr.Zero;
-	private static Func<KeysArgs, HookAction>? _Hook = null;
+	private IntPtr _HookHandle = IntPtr.Zero;
+	private Func<KeysArgs, HookAction>? _Hook = null;
 
-	public static void RemoveHook()
+	public void RemoveHook()
 	{
 		if (_HookHandle != IntPtr.Zero)
 		{
@@ -20,7 +33,7 @@ internal class KeyboardHookManager
 		}
 	}
 
-	public static void AddHook(Func<KeysArgs, HookAction> hook)
+	public void AddHook(Func<KeysArgs, HookAction> hook)
 	{
 		if (_HookHandle == IntPtr.Zero)
 		{
@@ -38,7 +51,7 @@ internal class KeyboardHookManager
 		_Hook = hook;
 	}
 
-	private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+	private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
 	{
 		KeyPressedState pressedState = (KeyPressedState)wParam;
 
@@ -73,8 +86,7 @@ internal class KeyboardHookManager
 		}
 	}
 
-	private delegate IntPtr LowLevelKeyboardProc(
-		int nCode, IntPtr wParam, IntPtr lParam);
+	private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
 	[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 	private static extern IntPtr SetWindowsHookEx(int idHook,

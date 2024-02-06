@@ -6,15 +6,17 @@ namespace Vimfinity;
 internal abstract class KeyInterceptor : IDisposable
 {
 	protected abstract HookAction Intercept(KeysArgs args);
+	private IKeyboardHookManager _keyboardHookManager;
 
-	public KeyInterceptor()
+	public KeyInterceptor(IKeyboardHookManager keyboardHookManager)
 	{
-		KeyboardHookManager.AddHook(Intercept);
+		_keyboardHookManager = keyboardHookManager;
+		_keyboardHookManager.AddHook(Intercept);
 	}
 
 	public void Dispose()
 	{
-		KeyboardHookManager.RemoveHook();
+		_keyboardHookManager.RemoveHook();
 	}
 }
 
@@ -34,6 +36,8 @@ internal class VimKeyInterceptor : KeyInterceptor
 	};
 
 	private KeysState _keysState = new();
+
+	public VimKeyInterceptor(IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager) { }
 
 	protected override HookAction Intercept(KeysArgs args)
 	{
