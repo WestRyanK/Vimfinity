@@ -33,6 +33,8 @@ internal class VimKeyInterceptor : KeyInterceptor
 		{ (KeyModifierFlags.Unspecified, Keys.J), "{Down}" },
 		{ (KeyModifierFlags.Unspecified, Keys.K), "{Up}" },
 		{ (KeyModifierFlags.Unspecified, Keys.L), "{Right}" },
+		{ (KeyModifierFlags.Unspecified, Keys.N), "{Home}" },
+		{ (KeyModifierFlags.Unspecified, Keys.M), "{End}" },
 		{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
 		{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
 	};
