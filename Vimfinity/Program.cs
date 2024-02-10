@@ -14,7 +14,8 @@ class Program
 		exitItem.Click += ExitItem_Click;
 		trayIcon.ContextMenuStrip = menu;
 
-		using KeyInterceptor interceptor = new VimKeyInterceptor(new Win32KeyboardHookManager());
+		using Win32KeyboardHookManager hookManager = new();
+		using KeyInterceptor interceptor = new VimKeyInterceptor(hookManager);
 		Application.Run();
 	}
 

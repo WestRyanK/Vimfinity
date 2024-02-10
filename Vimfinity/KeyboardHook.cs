@@ -9,39 +9,59 @@ internal interface IKeyboardHookManager
 	public void RemoveHook();
 }
 
-internal class Win32KeyboardHookManager : IKeyboardHookManager
+internal class Win32KeyboardHookManager : IKeyboardHookManager, IDisposable
 {
 	private const int WH_KEYBOARD_LL = 13;
 
-	private IntPtr _HookHandle = IntPtr.Zero;
-	private Func<KeysArgs, HookAction>? _Hook = null;
+	private IntPtr _hookHandle = IntPtr.Zero;
+	private Func<KeysArgs, HookAction>? _hook = null;
+	private GCHandle _callbackHandle;
 
-	public void RemoveHook()
+	public bool ShouldHandleInjectedInputs { get; set; } = false;
+
+	~Win32KeyboardHookManager()
 	{
-		if (_HookHandle != IntPtr.Zero)
+		RemoveHook();
+	}
+
+	public void Dispose()
+	{
+		RemoveHook();
+		GC.SuppressFinalize(this);
+	}
+
+    public void RemoveHook()
+	{
+		if (_hookHandle != IntPtr.Zero)
 		{
-			UnhookWindowsHookEx(_HookHandle);
-			_HookHandle = IntPtr.Zero;
-			_Hook = null;
+			UnhookWindowsHookEx(_hookHandle);
+			_callbackHandle.Free();
+			_hookHandle = IntPtr.Zero;
+			_hook = null;
 		}
 	}
 
 	public void AddHook(Func<KeysArgs, HookAction> hook)
 	{
-		if (_HookHandle == IntPtr.Zero)
+		if (_hookHandle == IntPtr.Zero)
 		{
 			using Process currentProcess = Process.GetCurrentProcess();
 			using ProcessModule currentModule = currentProcess.MainModule!;
 			IntPtr moduleHandle = GetModuleHandle(currentModule.ModuleName);
 
-			_HookHandle = SetWindowsHookEx(WH_KEYBOARD_LL, HookCallback, moduleHandle, 0);
+			// We have to create a GCHandle for the HookCallback, otherwise it gets
+			// garbage collected and we get an ExecutionEngineException.
+			// See KeyboardHookTests.GarbageCollectionCrash_Test for more info.
+			LowLevelKeyboardProc callback = HookCallback;
+			_callbackHandle = GCHandle.Alloc(callback);
+			_hookHandle = SetWindowsHookEx(WH_KEYBOARD_LL, callback, moduleHandle, 0);
 		}
 		else
 		{
 			throw new InvalidOperationException("Only one hook can be added at a time.");
 		}
 
-		_Hook = hook;
+		_hook = hook;
 	}
 
 	private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -50,16 +70,16 @@ internal class Win32KeyboardHookManager : IKeyboardHookManager
 
 		if (nCode < 0 || !Enum.IsDefined(pressedState))
 		{
-			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
+			return CallNextHookEx(_hookHandle, nCode, wParam, lParam);
 		}
 
 		var keyboardStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam)!;
 		Debug.WriteLine(keyboardStruct);
 
-		if (keyboardStruct.IsInjected)
+		if (!ShouldHandleInjectedInputs && keyboardStruct.IsInjected)
 
 		{
-			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
+			return CallNextHookEx(_hookHandle, nCode, wParam, lParam);
 		}
 
 		KeysArgs args = new(
@@ -67,11 +87,11 @@ internal class Win32KeyboardHookManager : IKeyboardHookManager
 			pressedState
 		);
 
-		HookAction action = _Hook?.Invoke(args) ?? HookAction.ForwardKey;
+		HookAction action = _hook?.Invoke(args) ?? HookAction.ForwardKey;
 
 		if (action == HookAction.ForwardKey)
 		{
-			return CallNextHookEx(_HookHandle, nCode, wParam, lParam);
+			return CallNextHookEx(_hookHandle, nCode, wParam, lParam);
 		}
 		else
 		{
