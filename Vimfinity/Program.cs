@@ -2,10 +2,15 @@
 
 class Program
 {
-	public static void Main()
+	public static void Main(string[] args)
 	{
-		Splash splash = new(TimeSpan.FromSeconds(2));
-		splash.Show();
+		CommandLineArgs commandArgs = new(args);
+
+		if (!commandArgs.NoSplash)
+		{
+			Splash splash = new(TimeSpan.FromSeconds(2));
+			splash.Show();
+		}
 
 		TrayIcon trayIcon = new();
 
@@ -13,4 +18,16 @@ class Program
 		using KeyInterceptor interceptor = new VimKeyInterceptor(hookManager);
 		Application.Run();
 	}
+
+
+}
+
+class CommandLineArgs
+{
+	public bool NoSplash { get; private set; } = false;
+
+    public CommandLineArgs(string[] args)
+    {
+		NoSplash = args.Any(arg => string.Equals(arg, "-nosplash", StringComparison.OrdinalIgnoreCase));
+    }
 }
