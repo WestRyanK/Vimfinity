@@ -11,7 +11,7 @@ internal class TrayIcon
     {
 		NotifyIcon trayIcon = new();
 		trayIcon.Text = Application.ProductName;
-		trayIcon.Icon = new Icon(Properties.Resources.vimfinity, 40, 40);
+		trayIcon.Icon = new Icon(Properties.Resources.VimfinityIcon, 40, 40);
 		trayIcon.Visible = true;
 
 		ContextMenuStrip menu = new();
