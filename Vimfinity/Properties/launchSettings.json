@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Vimfinity": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    },
+    "Vimfinity-NoSplash": {
+      "commandName": "Project",
+      "commandLineArgs": "-nosplash"
+    }
+  }
+}

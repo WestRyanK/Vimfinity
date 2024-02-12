@@ -2,25 +2,32 @@
 
 class Program
 {
-	public static void Main()
+	public static void Main(string[] args)
 	{
-		NotifyIcon trayIcon = new();
-		trayIcon.Text = Application.ProductName;
-		trayIcon.Icon = new Icon(Properties.Resources.vimfinity, 40, 40);
-		trayIcon.Visible = true;
+		CommandLineArgs commandArgs = new(args);
 
-		ContextMenuStrip menu = new();
-		ToolStripItem exitItem = menu.Items.Add("Exit");
-		exitItem.Click += ExitItem_Click;
-		trayIcon.ContextMenuStrip = menu;
+		if (!commandArgs.NoSplash)
+		{
+			Splash splash = new(TimeSpan.FromSeconds(2));
+			splash.Show();
+		}
+
+		TrayIcon trayIcon = new();
 
 		using Win32KeyboardHookManager hookManager = new();
 		using KeyInterceptor interceptor = new VimKeyInterceptor(hookManager);
 		Application.Run();
 	}
 
-	private static void ExitItem_Click(object? sender, EventArgs e)
-	{
-		Application.Exit();
-	}
+
+}
+
+class CommandLineArgs
+{
+	public bool NoSplash { get; private set; } = false;
+
+    public CommandLineArgs(string[] args)
+    {
+		NoSplash = args.Any(arg => string.Equals(arg, "-nosplash", StringComparison.OrdinalIgnoreCase));
+    }
 }
