@@ -52,3 +52,17 @@ internal class SendKeysActionBinding : IBindingAction
 		SendKeys.Send(Text);
 	}
 }
+
+internal class RunCommandActionBinding : IBindingAction
+{
+	public string Command { get; private set; }
+    public RunCommandActionBinding(string command)
+    {
+		Command = command;
+    }
+
+	public void Invoke()
+	{
+		System.Diagnostics.Process.Start(Command);
+	}
+}

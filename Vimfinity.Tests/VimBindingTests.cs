@@ -26,4 +26,18 @@ public class VimBindingTests
 		Assert.NotEqual(combo, new KeyCombo(Keys.A, KeyModifierFlags.Control | KeyModifierFlags.Shift));
 		Assert.NotEqual(combo, new KeyCombo(Keys.B, KeyModifierFlags.Shift));
 	}
+
+	[Fact]
+	public void SendKeysActionBinding_Test()
+	{
+		SendKeysActionBinding binding = new("some text");
+		Assert.Equal("some text", binding.Text);
+	}
+
+	[Fact]
+	public void RunCommandActionBinding_Test()
+	{
+		RunCommandActionBinding binding = new("notepad.exe");
+		Assert.Equal("notepad.exe", binding.Command);
+	}
 }
