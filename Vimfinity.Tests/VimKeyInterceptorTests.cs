@@ -40,15 +40,15 @@ public class VimKeyInterceptorTests
 		var interceptor = new VimKeyInterceptor(new TestableKeyboardHookManager());
 		List<string> log = new();
 		interceptor.LayerKeyReleasedAction = log.Add;
-		interceptor.LayerKeyTappedTimeout = TimeSpan.FromTicks(100);
-		interceptor.ModifierReleasedRecentlyTimeout = TimeSpan.FromTicks(50);
-		interceptor.VimBindings = new Dictionary<KeyCombo, IBindingAction>()
+		interceptor.Settings.LayerKeyTappedTimeout = TimeSpan.FromTicks(100);
+		interceptor.Settings.ModifierReleasedRecentlyTimeout = TimeSpan.FromTicks(50);
+		interceptor.Settings.VimBindings = new Dictionary<KeyCombo, IBindingAction>()
 		{
 			{ new(Keys.J, KeyModifierFlags.Unspecified), new LogBindingAction(log, "J") },
 			{ new(Keys.X, KeyModifierFlags.Shift), new LogBindingAction(log, "X") },
 			{ new(Keys.X, KeyModifierFlags.None), new LogBindingAction(log, "x") },
 		};
-		interceptor.LayerKey = Keys.OemSemicolon;
+		interceptor.Settings.LayerKey = Keys.OemSemicolon;
 
 		outputLog = log;
 		return interceptor;
@@ -56,7 +56,7 @@ public class VimKeyInterceptorTests
 
 	private string BindingText(VimKeyInterceptor interceptor, Keys key, KeyModifierFlags modifier)
 	{
-		return (interceptor.VimBindings[new KeyCombo(key, modifier)] as LogBindingAction)!.Text;
+		return (interceptor.Settings.VimBindings[new KeyCombo(key, modifier)] as LogBindingAction)!.Text;
 	}
 
 	private void AssertHookAction(VimKeyInterceptor interceptor, KeyPressedState state, DateTime time, HookAction expectedAction, ISet<Keys> excludedKeys)
@@ -87,8 +87,8 @@ public class VimKeyInterceptorTests
 	{
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 
-		AssertHookAction(interceptor, KeyPressedState.Down, new DateTime(0), HookAction.ForwardKey, new HashSet<Keys> { interceptor.LayerKey });
-		AssertHookAction(interceptor, KeyPressedState.Up, new DateTime(0), HookAction.ForwardKey, new HashSet<Keys> { interceptor.LayerKey });
+		AssertHookAction(interceptor, KeyPressedState.Down, new DateTime(0), HookAction.ForwardKey, new HashSet<Keys> { interceptor.Settings.LayerKey });
+		AssertHookAction(interceptor, KeyPressedState.Up, new DateTime(0), HookAction.ForwardKey, new HashSet<Keys> { interceptor.Settings.LayerKey });
 		Assert.Empty(outputLog);
 	}
 
@@ -98,11 +98,11 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(200));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(200));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 	}
@@ -113,14 +113,14 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(90));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(90));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
-		Assert.Equal(interceptor.LayerKey.ToSendKeysString(), outputLog.Last());
+		Assert.Equal(interceptor.Settings.LayerKey.ToSendKeysString(), outputLog.Last());
 	}
 
 	[Fact]
@@ -133,7 +133,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -156,7 +156,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(BindingText(interceptor, Keys.X, KeyModifierFlags.None), outputLog.Last());
 
 		// Releasing bound key after layer key min hold duration.
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(200));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(200));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(2, outputLog.Count);
 	}
@@ -172,7 +172,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(110));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(110));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -183,7 +183,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(BindingText(interceptor, Keys.X, KeyModifierFlags.None), outputLog.Last());
 
 		// Releasing layer key before layer key min hold duration, but after a bound key was pressed.
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(160));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(160));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
 	}
@@ -194,7 +194,7 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(110));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(110));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -210,7 +210,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(1, outputLog.Count);
 
 		// Releasing layer key before layer key min hold duration, but after a bound key was pressed.
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(160));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(160));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
 	}
@@ -221,7 +221,7 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -242,7 +242,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(2, outputLog.Count);
 		Assert.Equal(BindingText(interceptor, Keys.X, KeyModifierFlags.Shift), outputLog.Last());
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(200));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(200));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(2, outputLog.Count);
 	}
@@ -253,7 +253,7 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -290,7 +290,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(3, outputLog.Count);
 		Assert.Equal(BindingText(interceptor, Keys.J, KeyModifierFlags.Unspecified), outputLog.Last());
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(200));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(200));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(3, outputLog.Count);
 	}
@@ -301,7 +301,7 @@ public class VimKeyInterceptorTests
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
 		HookAction action;
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(10));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(10));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -321,7 +321,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(20));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(20));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -329,10 +329,10 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(40));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(40));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
-		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.LayerKey.ToSendKeysString()}", outputLog.Last());
+		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.Settings.LayerKey.ToSendKeysString()}", outputLog.Last());
 	}
 
 	[Fact]
@@ -349,14 +349,14 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(30));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(30));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(40));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(40));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
-		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.LayerKey.ToSendKeysString()}", outputLog.Last());
+		Assert.Equal($"{Keys.ShiftKey.ToSendKeysString()}{interceptor.Settings.LayerKey.ToSendKeysString()}", outputLog.Last());
 	}
 
 	[Fact]
@@ -369,7 +369,7 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Down), new DateTime(20));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Down), new DateTime(20));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Empty(outputLog);
 
@@ -377,10 +377,10 @@ public class VimKeyInterceptorTests
 		Assert.Equal(HookAction.ForwardKey, action);
 		Assert.Empty(outputLog);
 
-		action = interceptor.Intercept(new(interceptor.LayerKey, KeyPressedState.Up), new DateTime(100));
+		action = interceptor.Intercept(new(interceptor.Settings.LayerKey, KeyPressedState.Up), new DateTime(100));
 		Assert.Equal(HookAction.SwallowKey, action);
 		Assert.Equal(1, outputLog.Count);
-		Assert.Equal(interceptor.LayerKey.ToSendKeysString(), outputLog.Last());
+		Assert.Equal(interceptor.Settings.LayerKey.ToSendKeysString(), outputLog.Last());
 	}
 
 }
