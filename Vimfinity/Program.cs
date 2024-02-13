@@ -18,8 +18,6 @@ class Program
 		using KeyInterceptor interceptor = new VimKeyInterceptor(hookManager);
 		Application.Run();
 	}
-
-
 }
 
 class CommandLineArgs

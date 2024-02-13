@@ -26,18 +26,21 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public TimeSpan ModifierReleasedRecentlyTimeout { get; set; } = TimeSpan.FromSeconds(.1f);
 
 	public Keys LayerKey { get; set; } = Keys.OemSemicolon;
-	public Action<string>? OutputAction { get; set; } = SendKeys.Send;
+	public Action<string>? LayerKeyReleasedAction { get; set; } = SendKeys.Send;
 
-	public IDictionary<(KeyModifierFlags, Keys), string> VimBindings { get; set; } = new Dictionary<(KeyModifierFlags, Keys), string>() {
-		{ (KeyModifierFlags.Unspecified, Keys.H), "{Left}" },
-		{ (KeyModifierFlags.Unspecified, Keys.J), "{Down}" },
-		{ (KeyModifierFlags.Unspecified, Keys.K), "{Up}" },
-		{ (KeyModifierFlags.Unspecified, Keys.L), "{Right}" },
-		{ (KeyModifierFlags.Unspecified, Keys.N), "{Home}" },
-		{ (KeyModifierFlags.Unspecified, Keys.M), "{End}" },
-		{ (KeyModifierFlags.Shift, Keys.X), "{Backspace}" },
-		{ (KeyModifierFlags.None, Keys.X), "{Delete}" },
+	public static readonly IReadOnlyDictionary<KeyCombo, IBindingAction> DefaultVimBindings = new Dictionary<KeyCombo, IBindingAction>()
+	{
+		{ new(Keys.H, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Left}") },
+		{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Down}") },
+		{ new(Keys.K, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Up}") },
+		{ new(Keys.L, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Right}") },
+		{ new(Keys.N, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Home}") },
+		{ new(Keys.M, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{End}") },
+		{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysActionBinding("{Backspace}") },
+		{ new(Keys.X, KeyModifierFlags.None), new SendKeysActionBinding("{Delete}") },
 	};
+
+	public IReadOnlyDictionary<KeyCombo, IBindingAction> VimBindings { get; set; } = DefaultVimBindings;
 
 	private KeysRecord _keysRecord = new();
 
@@ -56,9 +59,9 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 		if (_keysRecord.IsKeyDown(LayerKey))
 		{
-			if (args.PressedState == KeyPressedState.Down && TryGetVimBinding(modifiers, args.Key, out string? output))
+			if (args.PressedState == KeyPressedState.Down && TryGetVimBinding(modifiers, args.Key, out IBindingAction? action))
 			{
-				OutputAction?.Invoke(output);
+				action.Invoke();
 				return HookAction.SwallowKey;
 			}
 		}
@@ -71,7 +74,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 			{
 				IEnumerable<Keys> recentModifiers = GetRecentlyReleasedModifiers(ModifierReleasedRecentlyTimeout, nowUtc);
 				string modifiersString = string.Join(null, recentModifiers.Select(k => k.ToSendKeysString()));
-				OutputAction?.Invoke($"{modifiersString}{LayerKey.ToSendKeysString()}");
+				LayerKeyReleasedAction?.Invoke($"{modifiersString}{LayerKey.ToSendKeysString()}");
 			}
 			return HookAction.SwallowKey;
 		}
@@ -87,8 +90,8 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	private TimeSpan? GetTimeSinceLastBindingKeyEvent(DateTime nowUtc)
 	{
-		IEnumerable<TimeSpan?> upDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyUpDuration(k.Item2, nowUtc));
-		IEnumerable<TimeSpan?> downDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyDownDuration(k.Item2, nowUtc));
+		IEnumerable<TimeSpan?> upDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyUpDuration(k.Key, nowUtc));
+		IEnumerable<TimeSpan?> downDurations = VimBindings.Keys.Select(k => _keysRecord.GetKeyDownDuration(k.Key, nowUtc));
 
 		List<TimeSpan> durations =
 			upDurations
@@ -99,20 +102,20 @@ internal class VimKeyInterceptor : KeyInterceptor
 		return durations.Any() ? durations.Min() : null;
 	}
 
-	private bool TryGetVimBinding(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out string? output)
+	private bool TryGetVimBinding(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out IBindingAction? action)
 	{
-		if (VimBindings.TryGetValue((modifiers, key), out string? o1))
+		if (VimBindings.TryGetValue(new(key, modifiers), out IBindingAction? a1))
 		{
-			output = o1;
+			action = a1;
 			return true;
 		}
-		if (VimBindings.TryGetValue((KeyModifierFlags.Unspecified, key), out string? o2))
+		if (VimBindings.TryGetValue(new(key, KeyModifierFlags.Unspecified), out IBindingAction? a2))
 		{
-			output = o2;
+			action = a2;
 			return true;
 		}
 
-		output = default;
+		action = default;
 		return false;
 	}
 }
