@@ -6,14 +6,6 @@ class Program
 	{
 		CommandLineArgs commandArgs = new(args);
 
-		if (!commandArgs.NoSplash)
-		{
-			Splash splash = new(TimeSpan.FromSeconds(2));
-			splash.Show();
-		}
-
-		TrayIcon trayIcon = new();
-
 		IFilePersisitenceProvider persistence = new JsonFilePersistenceProvider();
 		IPathProvider pathProvider = new PathProvider();
 
@@ -22,8 +14,13 @@ class Program
 		{
 			settings = persistence.Load<Settings>(pathProvider.SettingsPath);
 		}
-		catch
+		catch (FileNotFoundException)
 		{
+			settings = new();
+		}
+		catch (Exception ex)
+		{
+			MessageBox.Show($"Error loading settings:\n{ex}");
 			settings = new();
 		}
 
@@ -31,6 +28,14 @@ class Program
 		{
 			persistence.Save(settings, pathProvider.SettingsPath);
 		}
+
+		if (!commandArgs.NoSplash)
+		{
+			Splash splash = new(TimeSpan.FromSeconds(2));
+			splash.Show();
+		}
+
+		TrayIcon trayIcon = new();
 
 		using Win32KeyboardHookManager hookManager = new();
 		using KeyInterceptor interceptor = new VimKeyInterceptor(settings, hookManager);
