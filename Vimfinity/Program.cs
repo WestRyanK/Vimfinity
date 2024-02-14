@@ -27,6 +27,11 @@ class Program
 			settings = new();
 		}
 
+		if (commandArgs.CreateSettingsFile)
+		{
+			persistence.Save(settings, pathProvider.SettingsPath);
+		}
+
 		using Win32KeyboardHookManager hookManager = new();
 		using KeyInterceptor interceptor = new VimKeyInterceptor(settings, hookManager);
 		Application.Run();
@@ -35,10 +40,16 @@ class Program
 
 class CommandLineArgs
 {
+	public const string NoSplashSwitchName = "NoSplash";
 	public bool NoSplash { get; private set; } = false;
+	public const string CreateSettingsFileSwitchName = "CreateSettingsFile";
+	public bool CreateSettingsFile { get; private set; } = false;
 
     public CommandLineArgs(string[] args)
     {
-		NoSplash = args.Any(arg => string.Equals(arg, "-nosplash", StringComparison.OrdinalIgnoreCase));
+		NoSplash = HasSwitch(args, NoSplashSwitchName);
+		CreateSettingsFile = HasSwitch(args, CreateSettingsFileSwitchName);
     }
+
+	public static bool HasSwitch(string[] args, string switchName) => args.Any(arg => string.Equals(arg, $"-{switchName}", StringComparison.OrdinalIgnoreCase));
 }

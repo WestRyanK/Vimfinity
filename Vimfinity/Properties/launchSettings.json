@@ -6,7 +6,11 @@
     },
     "Vimfinity-NoSplash": {
       "commandName": "Project",
-      "commandLineArgs": "-nosplash"
+      "commandLineArgs": "-NoSplash"
+    },
+    "Vimfinity-CreateSettingsFile": {
+      "commandName": "Project",
+      "commandLineArgs": "-CreateSettingsFile"
     }
   }
 }
