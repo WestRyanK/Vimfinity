@@ -2,38 +2,46 @@
 public class CommandLineArgsTests
 {
 	[Fact]
-	public void NoSplash_Empty_Test()
+	public void HasSwitch_Empty_Test()
 	{
-		CommandLineArgs args = new([]);
-		Assert.False(args.NoSplash);
+		Assert.False(CommandLineArgs.HasSwitch([], CommandLineArgs.NoSplashSwitchName));
 	}
 
 	[Fact]
-	public void NoSplash_Lowercase_Test()
+	public void HasSwitch_Lowercase_Test()
 	{
-		CommandLineArgs args = new(["-nosplash"]);
-		Assert.True(args.NoSplash);
+		Assert.True(CommandLineArgs.HasSwitch(["-nosplash"], CommandLineArgs.NoSplashSwitchName));
 	}
 
 	[Fact]
-	public void NoSplash_Uppercase_Test()
+	public void HasSwitch_Uppercase_Test()
 	{
-		CommandLineArgs args = new(["-NoSplash"]);
-		Assert.True(args.NoSplash);
+		Assert.True(CommandLineArgs.HasSwitch(["-NoSplash"], CommandLineArgs.NoSplashSwitchName));
 	}
 
 	[Fact]
-	public void NoSplash_NoHyphen_Test()
+	public void HasSwitch_NoHyphen_Test()
 	{
-		CommandLineArgs args = new(["nosplash"]);
-		Assert.False(args.NoSplash);
+		Assert.False(CommandLineArgs.HasSwitch(["NoSplash"], CommandLineArgs.NoSplashSwitchName));
 	}
 
 	[Fact]
-	public void NoSplash_NotFirst_Test()
+	public void HasSwitch_NotFirst_Test()
 	{
-		CommandLineArgs args = new(["-hello", "-nosplash", "-world"]);
-		Assert.True(args.NoSplash);
+		Assert.True(CommandLineArgs.HasSwitch(["-hello", "-NoSplash", "-world"], CommandLineArgs.NoSplashSwitchName));
 	}
 
+	[Fact]
+	public void NoSplash_Test()
+	{
+		Assert.False(new CommandLineArgs([]).NoSplash);
+		Assert.True(new CommandLineArgs([$"-{CommandLineArgs.NoSplashSwitchName}"]).NoSplash);
+	}
+
+	[Fact]
+	public void CreateSettingsFile_Test()
+	{
+		Assert.False(new CommandLineArgs([]).CreateSettingsFile);
+		Assert.True(new CommandLineArgs([$"-{CommandLineArgs.CreateSettingsFileSwitchName}"]).CreateSettingsFile);
+	}
 }
