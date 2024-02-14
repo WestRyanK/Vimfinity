@@ -14,8 +14,21 @@ class Program
 
 		TrayIcon trayIcon = new();
 
+		IFilePersisitenceProvider persistence = new JsonFilePersistenceProvider();
+		IPathProvider pathProvider = new PathProvider();
+
+		Settings settings;
+		try
+		{
+			settings = persistence.Load<Settings>(pathProvider.SettingsPath);
+		}
+		catch
+		{
+			settings = new();
+		}
+
 		using Win32KeyboardHookManager hookManager = new();
-		using KeyInterceptor interceptor = new VimKeyInterceptor(new(), hookManager);
+		using KeyInterceptor interceptor = new VimKeyInterceptor(settings, hookManager);
 		Application.Run();
 	}
 }

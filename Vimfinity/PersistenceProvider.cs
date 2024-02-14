@@ -66,3 +66,13 @@ internal class JsonStringPersistenceProvider : JsonPersistenceProvider
 		return reader.ReadToEnd();
 	}
 }
+
+internal interface IPathProvider
+{
+	public string SettingsPath { get; }
+}
+
+internal class PathProvider : IPathProvider
+{
+	public string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".vimfinity");
+}
