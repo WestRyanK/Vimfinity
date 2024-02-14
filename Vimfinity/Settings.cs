@@ -12,14 +12,14 @@ internal class Settings
 
 	public static readonly IReadOnlyDictionary<KeyCombo, IBindingAction> DefaultVimBindings = new Dictionary<KeyCombo, IBindingAction>()
 	{
-		{ new(Keys.H, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Left}") },
-		{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Down}") },
-		{ new(Keys.K, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Up}") },
-		{ new(Keys.L, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Right}") },
-		{ new(Keys.N, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Home}") },
-		{ new(Keys.M, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{End}") },
-		{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysActionBinding("{Backspace}") },
-		{ new(Keys.X, KeyModifierFlags.None), new SendKeysActionBinding("{Delete}") },
+		{ new(Keys.H, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Left}") },
+		{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Down}") },
+		{ new(Keys.K, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Up}") },
+		{ new(Keys.L, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Right}") },
+		{ new(Keys.N, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Home}") },
+		{ new(Keys.M, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{End}") },
+		{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
+		{ new(Keys.X, KeyModifierFlags.None), new SendKeysBindingAction("{Delete}") },
 	};
 
 	[JsonIgnore]

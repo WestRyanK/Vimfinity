@@ -28,34 +28,35 @@ public class VimBindingTests
 	}
 
 	[Fact]
-	public void SendKeysActionBinding_Test()
+	public void SendKeysBindingAction_Test()
 	{
-		SendKeysActionBinding binding = new("some text");
+		SendKeysBindingAction binding = new("some text");
 		Assert.Equal("some text", binding.Text);
 	}
 
 	[Fact]
-	public void SendKeysActionBinding_Equals_Test()
+	public void SendKeysBindingAction_Equals_Test()
 	{
-		SendKeysActionBinding binding = new("text 1");
-		Assert.Equal(binding, new SendKeysActionBinding("text 1"));
-		Assert.NotEqual(binding, new SendKeysActionBinding("text 2"));
-		Assert.NotEqual((IBindingAction)binding, new RunCommandActionBinding("text 1"));
+		SendKeysBindingAction binding = new("text 1");
+		Assert.Equal(binding, new SendKeysBindingAction("text 1"));
+		Assert.NotEqual(binding, new SendKeysBindingAction("text 2"));
+		Assert.NotEqual((IBindingAction)binding, new RunCommandBindingAction("text 1"));
 	}
 
 	[Fact]
-	public void RunCommandActionBinding_Test()
+	public void RunCommandBindingAction_Test()
 	{
-		RunCommandActionBinding binding = new("notepad.exe");
+		RunCommandBindingAction binding = new("notepad.exe");
 		Assert.Equal("notepad.exe", binding.Command);
 	}
 
 	[Fact]
-	public void RunCommandActionBinding_Equals_Test()
+	public void RunCommandBindingAction_Equals_Test()
 	{
-		RunCommandActionBinding binding = new("command 1");
-		Assert.Equal(binding, new RunCommandActionBinding("command 1"));
-		Assert.NotEqual(binding, new RunCommandActionBinding("command 2"));
-		Assert.NotEqual((IBindingAction)binding, new SendKeysActionBinding("command 1"));
+		RunCommandBindingAction binding = new("command 1");
+		Assert.Equal(binding, new RunCommandBindingAction("command 1"));
+		Assert.NotEqual(binding, new RunCommandBindingAction("command 2"));
+		Assert.NotEqual((IBindingAction)binding, new SendKeysBindingAction("command 1"));
 	}
 }
+

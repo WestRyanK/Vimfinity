@@ -55,9 +55,9 @@ public class SerializationTests
 		settings.ModifierReleasedRecentlyTimeout = TimeSpan.FromSeconds(2.25f);
 		settings.VimBindings = new Dictionary<KeyCombo, IBindingAction>()
 		{
-			{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysActionBinding("{Down}") },
-			{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysActionBinding("{Backspace}") },
-			{ new(Keys.T, KeyModifierFlags.None), new RunCommandActionBinding("notepad.txt")},
+			{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Down}") },
+			{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
+			{ new(Keys.T, KeyModifierFlags.None), new RunCommandBindingAction("notepad.txt")},
 		};
 
 		JsonStringPersistenceProvider provider = new();
@@ -76,7 +76,7 @@ public class SerializationTests
 			        "Modifiers": "Unspecified"
 			      },
 			      "Value": {
-			        "$type": "SendKeysActionBinding",
+			        "$type": "SendKeysBindingAction",
 			        "Text": "{Down}"
 			      }
 			    },
@@ -86,7 +86,7 @@ public class SerializationTests
 			        "Modifiers": "Shift"
 			      },
 			      "Value": {
-			        "$type": "SendKeysActionBinding",
+			        "$type": "SendKeysBindingAction",
 			        "Text": "{Backspace}"
 			      }
 			    },
@@ -96,7 +96,7 @@ public class SerializationTests
 			        "Modifiers": "None"
 			      },
 			      "Value": {
-			        "$type": "RunCommandActionBinding",
+			        "$type": "RunCommandBindingAction",
 			        "Command": "notepad.txt"
 			      }
 			    }

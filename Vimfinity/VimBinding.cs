@@ -33,18 +33,18 @@ internal class KeyCombo
 	public override string ToString() => $"{{{Key}, {Modifiers}}}";
 }
 
-[JsonDerivedType(typeof(SendKeysActionBinding), nameof(SendKeysActionBinding))]
-[JsonDerivedType(typeof(RunCommandActionBinding), nameof(RunCommandActionBinding))]
+[JsonDerivedType(typeof(SendKeysBindingAction), nameof(SendKeysBindingAction))]
+[JsonDerivedType(typeof(RunCommandBindingAction), nameof(RunCommandBindingAction))]
 internal interface IBindingAction
 {
 	void Invoke();
 }
 
-internal class SendKeysActionBinding : IBindingAction
+internal class SendKeysBindingAction : IBindingAction
 {
 	public string Text { get; private set; }
 	[JsonConstructor]
-    public SendKeysActionBinding(string text)
+    public SendKeysBindingAction(string text)
     {
 		Text = text;
     }
@@ -56,7 +56,7 @@ internal class SendKeysActionBinding : IBindingAction
 
 	public override bool Equals(object? obj)
 	{
-		if (obj is not SendKeysActionBinding other)
+		if (obj is not SendKeysBindingAction other)
 		{
 			return false;
 		}
@@ -66,14 +66,14 @@ internal class SendKeysActionBinding : IBindingAction
 
 	public override int GetHashCode() => Text.GetHashCode();
 
-	public override string ToString() => $"{{{nameof(SendKeysActionBinding)}: {Text}}}";
+	public override string ToString() => $"{{{nameof(SendKeysBindingAction)}: {Text}}}";
 }
 
-internal class RunCommandActionBinding : IBindingAction
+internal class RunCommandBindingAction : IBindingAction
 {
 	public string Command { get; private set; }
 	[JsonConstructor]
-    public RunCommandActionBinding(string command)
+    public RunCommandBindingAction(string command)
     {
 		Command = command;
     }
@@ -85,15 +85,16 @@ internal class RunCommandActionBinding : IBindingAction
 
 	public override bool Equals(object? obj)
 	{
-		if (obj is not RunCommandActionBinding other)
+		if (obj is not RunCommandBindingAction other)
 		{
 			return false;
 		}
 
-		return Command == other.Command;
+		return
+			Command == other.Command;
 	}
 
 	public override int GetHashCode() => Command.GetHashCode();
 
-	public override string ToString() => $"{{{nameof(RunCommandActionBinding)}: {Command}}}";
+	public override string ToString() => $"{{{nameof(RunCommandBindingAction)}: {Command} }}";
 }
