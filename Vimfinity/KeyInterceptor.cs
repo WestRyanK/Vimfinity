@@ -28,9 +28,13 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	private KeysRecord _keysRecord = new();
 
-	public VimKeyInterceptor(IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager) { }
+	public VimKeyInterceptor(Settings settings, IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager)
+	{
+		Settings = settings;
+	}
 
 	protected override HookAction Intercept(KeysArgs args)
+
 	{
 		return Intercept(args, DateTime.UtcNow);
 	}

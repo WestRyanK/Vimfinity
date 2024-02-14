@@ -37,18 +37,22 @@ public class VimKeyInterceptorTests
 {
 	private VimKeyInterceptor CreateInterceptor(out List<string> outputLog)
 	{
-		var interceptor = new VimKeyInterceptor(new TestableKeyboardHookManager());
 		List<string> log = new();
-		interceptor.LayerKeyReleasedAction = log.Add;
-		interceptor.Settings.LayerKeyTappedTimeout = TimeSpan.FromTicks(100);
-		interceptor.Settings.ModifierReleasedRecentlyTimeout = TimeSpan.FromTicks(50);
-		interceptor.Settings.VimBindings = new Dictionary<KeyCombo, IBindingAction>()
+		Settings settings = new()
 		{
-			{ new(Keys.J, KeyModifierFlags.Unspecified), new LogBindingAction(log, "J") },
-			{ new(Keys.X, KeyModifierFlags.Shift), new LogBindingAction(log, "X") },
-			{ new(Keys.X, KeyModifierFlags.None), new LogBindingAction(log, "x") },
+			LayerKeyTappedTimeout = TimeSpan.FromTicks(100),
+			ModifierReleasedRecentlyTimeout = TimeSpan.FromTicks(50),
+			LayerKey = Keys.OemSemicolon,
+			VimBindings = new Dictionary<KeyCombo, IBindingAction>()
+			{
+				{ new(Keys.J, KeyModifierFlags.Unspecified), new LogBindingAction(log, "J") },
+				{ new(Keys.X, KeyModifierFlags.Shift), new LogBindingAction(log, "X") },
+				{ new(Keys.X, KeyModifierFlags.None), new LogBindingAction(log, "x") },
+			},
 		};
-		interceptor.Settings.LayerKey = Keys.OemSemicolon;
+		
+		var interceptor = new VimKeyInterceptor(settings, new TestableKeyboardHookManager());
+		interceptor.LayerKeyReleasedAction = log.Add;
 
 		outputLog = log;
 		return interceptor;
@@ -75,7 +79,7 @@ public class VimKeyInterceptorTests
 
 		Assert.False(hookManager.IsHooked);
 
-		using (var interceptor = new VimKeyInterceptor(hookManager))
+		using (var interceptor = new VimKeyInterceptor(new(), hookManager))
 		{
 			Assert.True(hookManager.IsHooked);
 		}
