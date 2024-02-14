@@ -46,8 +46,9 @@ public class VimBindingTests
 	[Fact]
 	public void RunCommandBindingAction_Test()
 	{
-		RunCommandBindingAction binding = new("notepad.exe");
+		RunCommandBindingAction binding = new("notepad.exe", "file.txt");
 		Assert.Equal("notepad.exe", binding.Command);
+		Assert.Equal("file.txt", binding.Arguments);
 	}
 
 	[Fact]
@@ -55,6 +56,18 @@ public class VimBindingTests
 	{
 		RunCommandBindingAction binding = new("command 1");
 		Assert.Equal(binding, new RunCommandBindingAction("command 1"));
+		Assert.NotEqual(binding, new RunCommandBindingAction("command 1", "argument1"));
+		Assert.NotEqual(binding, new RunCommandBindingAction("command 2"));
+		Assert.NotEqual((IBindingAction)binding, new SendKeysBindingAction("command 1"));
+	}
+
+	[Fact]
+	public void RunCommandBindingAction_EqualsWithArguments_Test()
+	{
+		RunCommandBindingAction binding = new("command 1", "arguments1");
+		Assert.Equal(binding, new RunCommandBindingAction("command 1", "arguments1"));
+		Assert.NotEqual(binding, new RunCommandBindingAction("command 2", "arguments1"));
+		Assert.NotEqual(binding, new RunCommandBindingAction("command 1"));
 		Assert.NotEqual(binding, new RunCommandBindingAction("command 2"));
 		Assert.NotEqual((IBindingAction)binding, new SendKeysBindingAction("command 1"));
 	}

@@ -57,7 +57,7 @@ public class SerializationTests
 		{
 			{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Down}") },
 			{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
-			{ new(Keys.T, KeyModifierFlags.None), new RunCommandBindingAction("notepad.txt")},
+			{ new(Keys.T, KeyModifierFlags.None), new RunCommandBindingAction("notepad.txt", "file.txt")},
 		};
 
 		JsonStringPersistenceProvider provider = new();
@@ -97,7 +97,8 @@ public class SerializationTests
 			      },
 			      "Value": {
 			        "$type": "RunCommandBindingAction",
-			        "Command": "notepad.txt"
+			        "Command": "notepad.txt",
+			        "Arguments": "file.txt"
 			      }
 			    }
 			  ]

@@ -72,15 +72,17 @@ internal class SendKeysBindingAction : IBindingAction
 internal class RunCommandBindingAction : IBindingAction
 {
 	public string Command { get; private set; }
+	public string? Arguments { get; private set; }
 	[JsonConstructor]
-    public RunCommandBindingAction(string command)
+    public RunCommandBindingAction(string command, string? arguments = null)
     {
 		Command = command;
+		Arguments = arguments;
     }
 
 	public void Invoke()
 	{
-		System.Diagnostics.Process.Start(Command);
+		System.Diagnostics.Process.Start(Command, Arguments ?? string.Empty);
 	}
 
 	public override bool Equals(object? obj)
@@ -91,10 +93,11 @@ internal class RunCommandBindingAction : IBindingAction
 		}
 
 		return
-			Command == other.Command;
+			Command == other.Command &&
+			Arguments == other.Arguments;
 	}
 
-	public override int GetHashCode() => Command.GetHashCode();
+	public override int GetHashCode() => Command.GetHashCode() ^ Arguments?.GetHashCode() ?? 0;
 
-	public override string ToString() => $"{{{nameof(RunCommandBindingAction)}: {Command} }}";
+	public override string ToString() => $"{{{nameof(RunCommandBindingAction)}: {Command}, {Arguments} }}";
 }
