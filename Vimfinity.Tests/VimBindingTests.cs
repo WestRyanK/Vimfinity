@@ -18,9 +18,7 @@ public class VimBindingTests
 	{
 		KeyCombo combo = new(Keys.A, KeyModifierFlags.Shift);
 
-#pragma warning disable xUnit2000 // Constants and literals should be the expected argument
-		Assert.NotEqual(combo, null);
-#pragma warning restore xUnit2000 // Constants and literals should be the expected argument
+		Assert.False(combo.Equals(null));
 		Assert.NotEqual(combo, new KeyCombo(Keys.A, KeyModifierFlags.None));
 		Assert.NotEqual(combo, new KeyCombo(Keys.A, KeyModifierFlags.Control));
 		Assert.NotEqual(combo, new KeyCombo(Keys.A, KeyModifierFlags.Control | KeyModifierFlags.Shift));

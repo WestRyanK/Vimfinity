@@ -18,6 +18,13 @@ public class EnumerableUtilitiesTests
 	}
 
 	[Fact]
+	public void AllEqual_NotEqual()
+	{
+		Assert.False(EnumerableUtilities.AllEqual(["A"], ["B"]));
+		Assert.False(EnumerableUtilities.AllEqual(["A", "B", "D"], ["A", "B", "C"]));
+	}
+
+	[Fact]
 	public void AllEqual_NullElement()
 	{
 		Assert.True(EnumerableUtilities.AllEqual([null, "B"], [null, "B"]));

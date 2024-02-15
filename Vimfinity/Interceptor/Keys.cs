@@ -10,10 +10,6 @@ internal class KeysArgs : EventArgs
 		Key = key;
 		PressedState = pressedState;
 	}
-
-	public bool IsKeyDown(Keys key) => Key == key && PressedState == KeyPressedState.Down;
-
-	public bool IsKeyUp(Keys key) => Key == key && PressedState == KeyPressedState.Up;
 }
 
 internal enum KeyPressedState
