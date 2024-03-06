@@ -4,6 +4,43 @@ namespace Vimfinity;
 
 internal class Settings
 {
+	[JsonIgnore]
+	public IReadOnlyDictionary<string, LayerSettings> Layers { get; set; } = new Dictionary<string, LayerSettings>()
+	{
+		{ "Default", new() }
+	};
+
+	[JsonPropertyName("Layers")]
+	public IList<LayerNameAndSettings> SerializedLayers
+	{
+		get => Layers.Select(x => new LayerNameAndSettings { LayerName = x.Key, Settings = x.Value }).ToList();
+		set => Layers = value.ToDictionary(x => x.LayerName, x => x.Settings);
+	}
+
+	public override bool Equals(object? obj)
+	{
+		if (obj is not Settings other)
+		{
+			return false;
+		}
+
+		return SerializedLayers.AllEqual(other.SerializedLayers);
+	}
+
+	public override int GetHashCode()
+	{
+		return SerializedLayers.GetHashCode();
+	}
+
+	internal struct LayerNameAndSettings
+	{
+		public string LayerName { get; set; }
+		public LayerSettings Settings { get; set; }
+	}
+}
+
+internal class LayerSettings
+{
 	public TimeSpan LayerKeyTappedTimeout { get; set; } = TimeSpan.FromSeconds(.2f);
 	public TimeSpan ModifierReleasedRecentlyTimeout { get; set; } = TimeSpan.FromSeconds(.1f);
 
@@ -34,7 +71,7 @@ internal class Settings
 
 	public override bool Equals(object? obj)
 	{
-		if (obj is not Settings other)
+		if (obj is not LayerSettings other)
 		{
 			return false;
 		}
@@ -43,8 +80,7 @@ internal class Settings
 			LayerKey == other.LayerKey &&
 			LayerKeyTappedTimeout == other.LayerKeyTappedTimeout &&
 			ModifierReleasedRecentlyTimeout == other.ModifierReleasedRecentlyTimeout &&
-			SerializedVimBindings.Count == other.SerializedVimBindings.Count &&
-			SerializedVimBindings.Zip(other.SerializedVimBindings).All(x => x.First.Key.Equals(x.Second.Key) && x.First.Value.Equals(x.Second.Value));
+			SerializedVimBindings.AllEqual(other.SerializedVimBindings);
 	}
 
 	public override int GetHashCode() =>
@@ -53,4 +89,3 @@ internal class Settings
 		ModifierReleasedRecentlyTimeout.GetHashCode() ^
 		SerializedVimBindings.GetHashCode();
 }
-

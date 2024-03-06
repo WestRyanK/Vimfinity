@@ -27,6 +27,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public Action<string>? LayerKeyReleasedAction { get; set; } = SendKeys.Send;
 
 	private KeysRecord _keysRecord = new();
+	private Dictionary<Keys, TimeSpan?> _layerKeyDownDurations = new();
 
 	public VimKeyInterceptor(Settings settings, IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager)
 	{
@@ -41,30 +42,41 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	internal HookAction Intercept(KeysArgs args, DateTime nowUtc)
 	{
-		TimeSpan? layerKeyDownDuration = _keysRecord.GetKeyDownDuration(Settings.LayerKey, nowUtc);
-		_keysRecord.Record(args, nowUtc);
-		KeyModifierFlags modifiers = _keysRecord.GetKeyModifiersDown();
-
-		if (_keysRecord.IsKeyDown(Settings.LayerKey))
+		_layerKeyDownDurations.Clear();
+		foreach (var (layerName, layerSettings) in Settings.Layers)
 		{
-			if (args.PressedState == KeyPressedState.Down && TryGetVimBinding(modifiers, args.Key, out IBindingAction? action))
-			{
-				action.Invoke();
-				return HookAction.SwallowKey;
-			}
+			TimeSpan? layerKeyDownDuration = _keysRecord.GetKeyDownDuration(layerSettings.LayerKey, nowUtc);
+			_layerKeyDownDurations.Add(layerSettings.LayerKey, layerKeyDownDuration);
 		}
 
-		if (args.Key == Settings.LayerKey)
+		_keysRecord.Record(args, nowUtc);
+
+		foreach (var (layerName, layerSettings) in Settings.Layers)
 		{
-			TimeSpan? timeSinceLastBindingKeyEvent = GetTimeSinceLastBindingKeyEvent(nowUtc);
-			bool wasBindingPressed = timeSinceLastBindingKeyEvent < layerKeyDownDuration;
-			if (!wasBindingPressed && args.PressedState == KeyPressedState.Up && layerKeyDownDuration <	Settings.LayerKeyTappedTimeout)
+			TimeSpan? layerKeyDownDuration = _layerKeyDownDurations[layerSettings.LayerKey];
+			KeyModifierFlags modifiers = _keysRecord.GetKeyModifiersDown();
+
+			if (_keysRecord.IsKeyDown(layerSettings.LayerKey))
 			{
-				IEnumerable<Keys> recentModifiers = GetRecentlyReleasedModifiers(Settings.ModifierReleasedRecentlyTimeout, nowUtc);
-				string modifiersString = string.Join(null, recentModifiers.Select(k => k.ToSendKeysString()));
-				LayerKeyReleasedAction?.Invoke($"{modifiersString}{Settings.LayerKey.ToSendKeysString()}");
+				if (args.PressedState == KeyPressedState.Down && TryGetVimBinding(layerSettings, modifiers, args.Key, out IBindingAction? action))
+				{
+					action.Invoke();
+					return HookAction.SwallowKey;
+				}
 			}
-			return HookAction.SwallowKey;
+
+			if (args.Key == layerSettings.LayerKey)
+			{
+				TimeSpan? timeSinceLastBindingKeyEvent = GetTimeSinceLastBindingKeyEvent(layerSettings, nowUtc);
+				bool wasBindingPressed = timeSinceLastBindingKeyEvent < layerKeyDownDuration;
+				if (!wasBindingPressed && args.PressedState == KeyPressedState.Up && layerKeyDownDuration < layerSettings.LayerKeyTappedTimeout)
+				{
+					IEnumerable<Keys> recentModifiers = GetRecentlyReleasedModifiers(layerSettings.ModifierReleasedRecentlyTimeout, nowUtc);
+					string modifiersString = string.Join(null, recentModifiers.Select(k => k.ToSendKeysString()));
+					LayerKeyReleasedAction?.Invoke($"{modifiersString}{layerSettings.LayerKey.ToSendKeysString()}");
+				}
+				return HookAction.SwallowKey;
+			}
 		}
 
 		return HookAction.ForwardKey;
@@ -76,10 +88,10 @@ internal class VimKeyInterceptor : KeyInterceptor
 			.Where(k => _keysRecord.GetKeyUpDuration(k, nowUtc) < maxTimeSinceRelease);
 	}
 
-	private TimeSpan? GetTimeSinceLastBindingKeyEvent(DateTime nowUtc)
+	private TimeSpan? GetTimeSinceLastBindingKeyEvent(LayerSettings layerSettings, DateTime nowUtc)
 	{
-		IEnumerable<TimeSpan?> upDurations = Settings.VimBindings.Keys.Select(k => _keysRecord.GetKeyUpDuration(k.Key, nowUtc));
-		IEnumerable<TimeSpan?> downDurations = Settings.VimBindings.Keys.Select(k => _keysRecord.GetKeyDownDuration(k.Key, nowUtc));
+		IEnumerable<TimeSpan?> upDurations = layerSettings.VimBindings.Keys.Select(k => _keysRecord.GetKeyUpDuration(k.Key, nowUtc));
+		IEnumerable<TimeSpan?> downDurations = layerSettings.VimBindings.Keys.Select(k => _keysRecord.GetKeyDownDuration(k.Key, nowUtc));
 
 		List<TimeSpan> durations =
 			upDurations
@@ -90,14 +102,14 @@ internal class VimKeyInterceptor : KeyInterceptor
 		return durations.Any() ? durations.Min() : null;
 	}
 
-	private bool TryGetVimBinding(KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out IBindingAction? action)
+	private bool TryGetVimBinding(LayerSettings layerSettings, KeyModifierFlags modifiers, Keys key, [NotNullWhen(true)] out IBindingAction? action)
 	{
-		if (Settings.VimBindings.TryGetValue(new(key, modifiers), out IBindingAction? a1))
+		if (layerSettings.VimBindings.TryGetValue(new(key, modifiers), out IBindingAction? a1))
 		{
 			action = a1;
 			return true;
 		}
-		if (Settings.VimBindings.TryGetValue(new(key, KeyModifierFlags.Unspecified), out IBindingAction? a2))
+		if (layerSettings.VimBindings.TryGetValue(new(key, KeyModifierFlags.Unspecified), out IBindingAction? a2))
 		{
 			action = a2;
 			return true;

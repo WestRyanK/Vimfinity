@@ -49,15 +49,23 @@ public class SerializationTests
 	[Fact]
 	public void SettingsSerialization_Test()
 	{
-		Settings settings = new();
-		settings.LayerKey = Keys.OemSemicolon;
-		settings.LayerKeyTappedTimeout = TimeSpan.FromSeconds(.5f);
-		settings.ModifierReleasedRecentlyTimeout = TimeSpan.FromSeconds(2.25f);
-		settings.VimBindings = new Dictionary<KeyCombo, IBindingAction>()
+		Settings settings = new()
 		{
-			{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Down}") },
-			{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
-			{ new(Keys.T, KeyModifierFlags.None), new RunCommandBindingAction("notepad.txt", "file.txt")},
+			Layers = new Dictionary<string, LayerSettings>()
+			{
+				{ "Test", new() {
+						LayerKey = Keys.OemSemicolon,
+						LayerKeyTappedTimeout = TimeSpan.FromSeconds(.5f),
+						ModifierReleasedRecentlyTimeout = TimeSpan.FromSeconds(2.25f),
+						VimBindings = new Dictionary<KeyCombo, IBindingAction>()
+						{
+							{ new(Keys.J, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{Down}") },
+							{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
+							{ new(Keys.T, KeyModifierFlags.None), new RunCommandBindingAction("notepad.txt", "file.txt") },
+						},
+					}
+				}
+			}
 		};
 
 		JsonStringPersistenceProvider provider = new();
@@ -66,39 +74,46 @@ public class SerializationTests
 		string expectedJson =
 			"""
 			{
-			  "LayerKeyTappedTimeout": "00:00:00.5000000",
-			  "ModifierReleasedRecentlyTimeout": "00:00:02.2500000",
-			  "LayerKey": "Oem1",
-			  "VimBindings": [
+			  "Layers": [
 			    {
-			      "Key": {
-			        "Key": "J",
-			        "Modifiers": "Unspecified"
-			      },
-			      "Value": {
-			        "$type": "SendKeysBindingAction",
-			        "Text": "{Down}"
-			      }
-			    },
-			    {
-			      "Key": {
-			        "Key": "X",
-			        "Modifiers": "Shift"
-			      },
-			      "Value": {
-			        "$type": "SendKeysBindingAction",
-			        "Text": "{Backspace}"
-			      }
-			    },
-			    {
-			      "Key": {
-			        "Key": "T",
-			        "Modifiers": "None"
-			      },
-			      "Value": {
-			        "$type": "RunCommandBindingAction",
-			        "Command": "notepad.txt",
-			        "Arguments": "file.txt"
+			      "LayerName": "Test",
+			      "Settings": {
+			        "LayerKeyTappedTimeout": "00:00:00.5000000",
+			        "ModifierReleasedRecentlyTimeout": "00:00:02.2500000",
+			        "LayerKey": "Oem1",
+			        "VimBindings": [
+			          {
+			            "Key": {
+			              "Key": "J",
+			              "Modifiers": "Unspecified"
+			            },
+			            "Value": {
+			              "$type": "SendKeysBindingAction",
+			              "Text": "{Down}"
+			            }
+			          },
+			          {
+			            "Key": {
+			              "Key": "X",
+			              "Modifiers": "Shift"
+			            },
+			            "Value": {
+			              "$type": "SendKeysBindingAction",
+			              "Text": "{Backspace}"
+			            }
+			          },
+			          {
+			            "Key": {
+			              "Key": "T",
+			              "Modifiers": "None"
+			            },
+			            "Value": {
+			              "$type": "RunCommandBindingAction",
+			              "Command": "notepad.txt",
+			              "Arguments": "file.txt"
+			            }
+			          }
+			        ]
 			      }
 			    }
 			  ]
