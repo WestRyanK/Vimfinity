@@ -158,6 +158,23 @@ public class VimKeyInterceptorTests
 	}
 
 	[Fact]
+	public void SecondLayerKeyTapped_Test()
+	{
+		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);
+		GetSettings(interceptor, out _, out var settings2);
+		HookAction action;
+
+		action = interceptor.Intercept(new(settings2.LayerKey, KeyPressedState.Down), new DateTime(10));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Empty(outputLog);
+
+		action = interceptor.Intercept(new(settings2.LayerKey, KeyPressedState.Up), new DateTime(90));
+		Assert.Equal(HookAction.SwallowKey, action);
+		Assert.Equal(1, outputLog.Count);
+		Assert.Equal(settings2.LayerKey.ToSendKeysString(), outputLog.Last());
+	}
+
+	[Fact]
 	public void Binding_Test()
 	{
 		VimKeyInterceptor interceptor = CreateInterceptor(out List<string> outputLog);

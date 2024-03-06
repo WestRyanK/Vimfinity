@@ -27,6 +27,7 @@ internal class VimKeyInterceptor : KeyInterceptor
 	public Action<string>? LayerKeyReleasedAction { get; set; } = SendKeys.Send;
 
 	private KeysRecord _keysRecord = new();
+	private Dictionary<Keys, TimeSpan?> _layerKeyDownDurations = new();
 
 	public VimKeyInterceptor(Settings settings, IKeyboardHookManager keyboardHookManager) : base(keyboardHookManager)
 	{
@@ -41,10 +42,18 @@ internal class VimKeyInterceptor : KeyInterceptor
 
 	internal HookAction Intercept(KeysArgs args, DateTime nowUtc)
 	{
+		_layerKeyDownDurations.Clear();
 		foreach (var (layerName, layerSettings) in Settings.Layers)
 		{
 			TimeSpan? layerKeyDownDuration = _keysRecord.GetKeyDownDuration(layerSettings.LayerKey, nowUtc);
-			_keysRecord.Record(args, nowUtc);
+			_layerKeyDownDurations.Add(layerSettings.LayerKey, layerKeyDownDuration);
+		}
+
+		_keysRecord.Record(args, nowUtc);
+
+		foreach (var (layerName, layerSettings) in Settings.Layers)
+		{
+			TimeSpan? layerKeyDownDuration = _layerKeyDownDurations[layerSettings.LayerKey];
 			KeyModifierFlags modifiers = _keysRecord.GetKeyModifiersDown();
 
 			if (_keysRecord.IsKeyDown(layerSettings.LayerKey))
