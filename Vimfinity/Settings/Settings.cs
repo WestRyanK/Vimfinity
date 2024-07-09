@@ -57,6 +57,7 @@ internal class LayerSettings
 		{ new(Keys.M, KeyModifierFlags.Unspecified), new SendKeysBindingAction("{End}") },
 		{ new(Keys.X, KeyModifierFlags.Shift), new SendKeysBindingAction("{Backspace}") },
 		{ new(Keys.X, KeyModifierFlags.None), new SendKeysBindingAction("{Delete}") },
+		{ new(Keys.E, KeyModifierFlags.None), new SendKeysBindingAction("{Enter}") },
 	};
 
 	[JsonIgnore]
